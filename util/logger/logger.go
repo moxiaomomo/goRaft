@@ -2,7 +2,7 @@ package logger
 
 import (
 	"fmt"
-	"gomh/util"
+	"github.com/moxiaomomo/goRaft/util"
 )
 
 var logLevel util.LogLevelEnum = util.LOG_INFO
