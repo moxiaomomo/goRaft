@@ -1,2 +1,3 @@
+test_raft
 internlog/*
 !internlog/README
