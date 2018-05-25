@@ -629,14 +629,8 @@ func (s *server) quorumSize() int {
 }
 
 func (s *server) loadConf() error {
-	confpath := path.Join(s.path, "raft.cfg")
-	if s.confPath != "" {
-		confpath = path.Join(s.path, s.confPath)
-	}
-
-	cfg, err := ioutil.ReadFile(confpath)
+	cfg, err := ioutil.ReadFile(s.confPath)
 	if err != nil {
-		fmt.Printf("=========%s\n", confpath)
 		return err
 	}
 
@@ -659,17 +653,12 @@ func (s *server) loadConf() error {
 }
 
 func (s *server) writeConf() error {
-	confpath := path.Join(s.path, "raft.cfg")
-	if s.confPath != "" {
-		confpath = path.Join(s.path, s.confPath)
-	}
-
 	s.conf.PeerHosts = []string{}
 	for _, p := range s.peers {
 		s.conf.PeerHosts = append(s.conf.PeerHosts, p.Host)
 	}
 
-	f, err := os.OpenFile(confpath, os.O_WRONLY|os.O_TRUNC|os.O_CREATE, os.ModePerm)
+	f, err := os.OpenFile(s.confPath, os.O_WRONLY|os.O_TRUNC|os.O_CREATE, os.ModePerm)
 	if err != nil {
 		return err
 	}
