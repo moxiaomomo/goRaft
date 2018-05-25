@@ -5,7 +5,7 @@ import (
 	"encoding/binary"
 	//	"fmt"
 	"github.com/golang/protobuf/proto"
-	pb "gomh/registry/raft/proto"
+	pb "github.com/moxiaomomo/goRaft/proto"
 	"os"
 )
 

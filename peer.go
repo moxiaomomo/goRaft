@@ -2,9 +2,8 @@ package raft
 
 import (
 	"fmt"
+	pb "github.com/moxiaomomo/goRaft/proto"
 	"golang.org/x/net/context"
-	pb "gomh/registry/raft/proto"
-	//	"gomh/util"
 	"google.golang.org/grpc"
 	"sync"
 	"time"

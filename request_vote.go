@@ -1,8 +1,8 @@
 package raft
 
 import (
+	pb "github.com/moxiaomomo/goRaft/proto"
 	"golang.org/x/net/context"
-	"gomh/registry/raft/proto"
 	"sync"
 )
 
@@ -11,7 +11,7 @@ type RequestVoteImp struct {
 	server *server
 }
 
-func (e *RequestVoteImp) RequestVoteMe(ctx context.Context, req *proto.VoteRequest) (*proto.VoteResponse, error) {
+func (e *RequestVoteImp) RequestVoteMe(ctx context.Context, req *pb.VoteRequest) (*pb.VoteResponse, error) {
 	voteGranted := false
 
 	if e.server.IsServerMember(req.Host) {
@@ -23,7 +23,7 @@ func (e *RequestVoteImp) RequestVoteMe(ctx context.Context, req *proto.VoteReque
 		}
 	}
 
-	pb := &proto.VoteResponse{
+	pb := &pb.VoteResponse{
 		Term:        req.Term,
 		VoteGranted: voteGranted,
 	}

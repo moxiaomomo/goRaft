@@ -6,15 +6,12 @@ Package proto is a generated protocol buffer package.
 
 It is generated from these files:
 	appendentry_request.proto
-	heartbeat.proto
 	log_entry.proto
 	vote_request.proto
 
 It has these top-level messages:
 	AppendEntriesReuqest
 	AppendEntriesResponse
-	HeartbeatRequest
-	HeartbeatResponse
 	LogEntry
 	VoteRequest
 	VoteResponse

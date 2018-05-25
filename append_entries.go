@@ -3,9 +3,9 @@ package raft
 import (
 	//	"encoding/json"
 	//	"fmt"
+	pb "github.com/moxiaomomo/goRaft/proto"
+	"github.com/moxiaomomo/goRaft/util"
 	"golang.org/x/net/context"
-	pb "gomh/registry/raft/proto"
-	"gomh/util"
 	"sync"
 )
 
