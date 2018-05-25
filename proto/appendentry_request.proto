@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+package proto;
+
+import "log_entry.proto";
+
+service AppendEntries {
+    rpc AppendEntries(AppendEntriesReuqest) returns (AppendEntriesResponse) {}
+}
+
+message AppendEntriesReuqest {
+    uint64 Term = 1;
+    uint64 FirstLogIndex = 2;
+    uint64 PreLogIndex = 3;
+    uint64 PreLogTerm = 4;
+    uint64 CommitIndex = 5;
+    uint64 HeartbeatInterval = 6;
+    string LeaderName = 7;
+    string LeaderHost = 8;
+    string LeaderExHost = 9;
+    repeated proto.LogEntry Entries = 10;
+}
+
+message AppendEntriesResponse {
+    bool Success = 1;
+    uint64 Term = 2;
+    uint64 Index = 3;
+    uint64 CommitIndex = 4;
+}

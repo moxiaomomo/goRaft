@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package proto;
+
+service RequestVote {
+    rpc RequestVoteMe(VoteRequest) returns (VoteResponse) {}
+}
+
+message VoteRequest {
+    uint64 Term = 1;
+    uint64 LastLogIndex = 2;
+    uint64 LastLogTerm = 3;
+    string CandidateName = 4;
+    string Host = 5;
+} 
+
+message VoteResponse {
+    uint64 Term = 1;
+    bool VoteGranted = 2;
+}
