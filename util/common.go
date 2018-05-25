@@ -2,7 +2,10 @@ package util
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
 	"reflect"
+	"strings"
 )
 
 const (
@@ -55,4 +58,12 @@ func SetStructField(obj interface{}, name string, value interface{}) error {
 
 	structField.Set(val)
 	return nil
+}
+
+func CurrentDirectory() (string, error) {
+	dir, err := filepath.Abs(filepath.Dir(os.Args[0]))
+	if err != nil {
+		return "", err
+	}
+	return strings.Replace(dir, "\\", "/", -1), nil
 }

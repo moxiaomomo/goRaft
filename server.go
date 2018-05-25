@@ -60,9 +60,10 @@ type Server interface {
 	OnAppendEntry(cmd Command, cmds []byte)
 }
 
-func NewServer(path, confPath string) (Server, error) {
+func NewServer(workdir string, confPath string) (Server, error) {
+	_ = os.Mkdir(workdir, 0700)
 	s := &server{
-		path:              path,
+		path:              workdir,
 		confPath:          confPath,
 		state:             Stopped,
 		log:               newLog(),
@@ -215,22 +216,24 @@ func (s *server) Init() error {
 		return nil
 	}
 
-	err := os.Mkdir(path.Join(s.path, "snapshot"), 0600)
+	err := os.MkdirAll(path.Join(s.path, "snapshot"), 0700)
 	if err != nil && !os.IsExist(err) {
 		return fmt.Errorf("raft initiation error: %s", err)
 	}
 
 	err = s.loadConf()
 	if err != nil {
+		fmt.Println(err)
 		return fmt.Errorf("raft load config error: %s", err)
 	}
 	fmt.Printf("config: %+v\n", s.conf)
 
 	logpath := path.Join(s.path, "internlog")
-	err = os.Mkdir(logpath, 0600)
+	err = os.MkdirAll(logpath, 0700)
 	if err != nil && !os.IsExist(err) {
 		return fmt.Errorf("raft-log initiation error: %s", err)
 	}
+	fmt.Printf("%+v\n", s.conf)
 	if err = s.log.LogInit(fmt.Sprintf("%s/%s%s", logpath, s.conf.LogPrefix, s.conf.Name)); err != nil {
 		return fmt.Errorf("raft-log initiation error: %s", err)
 	}
@@ -633,8 +636,8 @@ func (s *server) loadConf() error {
 
 	cfg, err := ioutil.ReadFile(confpath)
 	if err != nil {
-		fmt.Errorf("open config file failed, err:%s", err)
-		return nil
+		fmt.Printf("=========%s\n", confpath)
+		return err
 	}
 
 	conf := &Config{}
