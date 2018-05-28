@@ -361,7 +361,7 @@ func (s *server) AddPeer(name string, host string) error {
 		entry := &pb.LogEntry{
 			Index:       lindex + 1,
 			Term:        s.currentTerm,
-			Commandname: "raft:join",
+			Commandname: cmdinfo.CommandName(),
 			Command:     []byte(cmdjson),
 		}
 		s.onMemberChanged(entry)
@@ -393,7 +393,7 @@ func (s *server) RemovePeer(name string, host string) error {
 		entry := &pb.LogEntry{
 			Index:       lindex + 1,
 			Term:        s.currentTerm,
-			Commandname: "raft:leave",
+			Commandname: cmdinfo.CommandName(),
 			Command:     []byte(cmdjson),
 		}
 
@@ -496,7 +496,7 @@ func (s *server) leaderLoop() {
 	entry := &pb.LogEntry{
 		Index:       lindex + 1,
 		Term:        s.currentTerm,
-		Commandname: "raft:nop",
+		Commandname: (NOPCommand{}).CommandName(),
 		Command:     []byte(""),
 	}
 	s.log.AppendEntry(&LogEntry{Entry: entry})
