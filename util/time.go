@@ -23,54 +23,54 @@ const (
 
 const SecondInNano = 1000 * 1000 * 1000
 
-//return 1441006057 in sec
+//GetTimestamp return nowtimestamp in sec
 func GetTimestamp() int64 {
 	return time.Now().Unix()
 }
 
-//return 1441006057 in sec
+//GetTimestampString return nowtimestamp string in sec
 func GetTimestampString() string {
 	return strconv.FormatInt(GetTimestamp(), 10)
 }
 
-// return 1441007112776 in millisecond
+// GetTimestampInMilli returns nowtimestamp in millisecond
 func GetTimestampInMilli() int64 {
 	return int64(time.Now().UnixNano() / (1000 * 1000)) // ms
 }
 
-// return 1441007112776 in millisecond
+// GetTimestampInMilliString returns nowtimestamp in millisecond string
 func GetTimestampInMilliString() string {
 	return strconv.FormatInt(GetTimestampInMilli(), 10)
 }
 
-//微秒
+//GetTimestampInMicro 微秒 int64
 func GetTimestampInMicro() int64 {
 	return int64(time.Now().UnixNano() / 1000) // ms
 }
 
-// 微秒
+// GetTimestampInMicroString 微秒 string
 func GetTimestampInMicroString() string {
 	return strconv.FormatInt(GetTimestampInMicro(), 10)
 }
 
-//format
+//GetCurrentTimeFormat timeformat
 func GetCurrentTimeFormat(format string) string {
 	return GetTimeFormat(GetTimestamp(), format)
 }
 
-//
+// GetTimeFormat unixtime format
 func GetTimeFormat(second int64, format string) string {
 	return time.Unix(second, 0).Format(format)
 }
 
-// Timing the cost of function call, unix nano was returned
+// Elapse Timing the cost of function call, unix nano was returned
 func Elapse(f func()) int64 {
 	now := time.Now().UnixNano()
 	f()
 	return time.Now().UnixNano() - now
 }
 
-// Timing the cost of function call, unix nano was returned
+// ElapseString Timing the cost of function call, unix nano was returned
 func ElapseString(f func()) string {
 	return strconv.FormatInt(Elapse(f), 10)
 }

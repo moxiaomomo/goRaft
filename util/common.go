@@ -39,6 +39,7 @@ const (
 	LOG_ERROR
 )
 
+// SetStructField set k-v for a struct
 func SetStructField(obj interface{}, name string, value interface{}) error {
 	structObj := reflect.ValueOf(obj).Elem()
 	structField := structObj.FieldByName(name)
@@ -60,6 +61,7 @@ func SetStructField(obj interface{}, name string, value interface{}) error {
 	return nil
 }
 
+// CurrentDirectory returns current runtime directory
 func CurrentDirectory() (string, error) {
 	dir, err := filepath.Abs(filepath.Dir(os.Args[0]))
 	if err != nil {

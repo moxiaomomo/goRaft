@@ -4,6 +4,7 @@ import (
 	"net"
 )
 
+// GetLocalIP returns local node's IP address
 func GetLocalIP() string {
 	addrSlice, err := net.InterfaceAddrs()
 	if nil != err {

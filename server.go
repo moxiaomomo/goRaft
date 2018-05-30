@@ -213,7 +213,7 @@ func (s *server) RegisterCommand(cmd Command) {
 // set state = Initiated
 func (s *server) Init() error {
 	if s.IsRunning() {
-		return fmt.Errorf("server has been running with state:%d", s.State())
+		return fmt.Errorf("server has been running with state:%s", s.State())
 	}
 
 	if s.State() == Initiated {
