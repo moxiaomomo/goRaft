@@ -95,7 +95,7 @@ func (e *AppendEntriesImp) AppendEntries(ctx context.Context, req *pb.AppendEntr
 		}
 	}
 
-	// if appendentries succeeded, apply commands and update commited index
+	// if appendentries succeeded, apply commands and update committed index
 	if pb.Success {
 		cmiindex, _ := e.server.log.LastCommitInfo()
 		// apply the command
@@ -111,7 +111,7 @@ func (e *AppendEntriesImp) AppendEntries(ctx context.Context, req *pb.AppendEntr
 			}
 		}
 
-		// update commited index
+		// update committed index
 		lindex := e.server.log.LastLogIndex()
 		if lindex > req.GetCommitIndex() {
 			e.server.log.UpdateCommitIndex(req.GetCommitIndex())

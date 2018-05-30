@@ -35,7 +35,7 @@ type CommandEncoder interface {
 func NewCommand(name string, data []byte) (Command, error) {
 	command := commandTypes[name]
 	if command == nil {
-		return nil, fmt.Errorf("Unkown command:%s", name)
+		return nil, fmt.Errorf("Unknown command:%s", name)
 	}
 
 	cmd := reflect.New(reflect.Indirect(reflect.ValueOf(command)).Type()).Interface()
