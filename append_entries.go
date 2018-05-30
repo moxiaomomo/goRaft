@@ -3,18 +3,20 @@ package raft
 import (
 	//	"encoding/json"
 	//	"fmt"
+	"sync"
+
 	pb "github.com/moxiaomomo/goRaft/proto"
 	"github.com/moxiaomomo/goRaft/util"
 	"golang.org/x/net/context"
-	"sync"
 )
 
+// AppendEntriesImp a struct for append-entry implementation
 type AppendEntriesImp struct {
 	server *server
 	mutex  sync.Mutex
 }
 
-// handle appendentries request
+// AppendEntries handle the requests of append-entry
 func (e *AppendEntriesImp) AppendEntries(ctx context.Context, req *pb.AppendEntriesReuqest) (*pb.AppendEntriesResponse, error) {
 	e.mutex.Lock()
 	defer e.mutex.Unlock()

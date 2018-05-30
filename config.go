@@ -1,5 +1,6 @@
 package raft
 
+// Config configuration for a server node
 type Config struct {
 	LogPrefix   string   `json:"logprefix"`
 	CommitIndex uint64   `json:"commitIndex"`

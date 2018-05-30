@@ -8,6 +8,7 @@ import (
 	"reflect"
 )
 
+// Command is an interface of basic command
 type Command interface {
 	CommandName() string
 }
@@ -18,17 +19,19 @@ func init() {
 	commandTypes = map[string]Command{}
 }
 
+// CommandApply is an interface for command apply
 type CommandApply interface {
 	//	Apply(Context) (interface{}, error)
 	Apply(Server) (interface{}, error)
 }
 
+// CommandEncoder is an interface for commands' encode and decode operation
 type CommandEncoder interface {
 	Encode(w io.Writer) error
 	Decode(r io.Reader) error
 }
 
-// using name to create a new command instance
+// NewCommand uses name to create a new command instance
 func NewCommand(name string, data []byte) (Command, error) {
 	command := commandTypes[name]
 	if command == nil {
@@ -57,9 +60,10 @@ func NewCommand(name string, data []byte) (Command, error) {
 	return cmdcopy, nil
 }
 
+// RegisterCommand to register commands on current workspace
 func RegisterCommand(command Command) error {
 	if command == nil {
-		return fmt.Errorf("command to register cannot be null.")
+		return fmt.Errorf("command to register cannot be null")
 	} else if commandTypes[command.CommandName()] != nil {
 		return fmt.Errorf("command to register is duplicated: %s", command.CommandName())
 	}

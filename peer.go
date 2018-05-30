@@ -2,13 +2,15 @@ package raft
 
 import (
 	"fmt"
+	"sync"
+	"time"
+
 	pb "github.com/moxiaomomo/goRaft/proto"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
-	"sync"
-	"time"
 )
 
+// Peer stores others nodes' info
 type Peer struct {
 	server           *server
 	Name             string
@@ -22,18 +24,21 @@ type Peer struct {
 	mutex sync.RWMutex
 }
 
+// RequestVoteRespChan response of a vote request
 type RequestVoteRespChan struct {
 	Failed   bool
 	Resp     *pb.VoteResponse
 	PeerHost string
 }
 
+// AppendLogRespChan response of an append-entry request
 type AppendLogRespChan struct {
 	Failed   bool
 	Resp     *pb.AppendEntriesResponse
 	PeerHost string
 }
 
+// NewPeer creates a new peer instance
 func NewPeer(server *server, name, host string, heartbeatInterval time.Duration) *Peer {
 	return &Peer{
 		server:            server,
@@ -44,6 +49,7 @@ func NewPeer(server *server, name, host string, heartbeatInterval time.Duration)
 	}
 }
 
+// SetVoteRequestState set current state about votion
 func (p *Peer) SetVoteRequestState(state int) {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
@@ -51,6 +57,7 @@ func (p *Peer) SetVoteRequestState(state int) {
 	p.voteRequestState = state
 }
 
+// VoteRequestState returns the current state about votion
 func (p *Peer) VoteRequestState() int {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
@@ -58,10 +65,11 @@ func (p *Peer) VoteRequestState() int {
 	return p.voteRequestState
 }
 
+// RequestVoteMe send request for leader votion
 func (p *Peer) RequestVoteMe(lastLogIndex, lastTerm uint64) {
 	conn, err := grpc.Dial(p.Host, grpc.WithInsecure())
 	if err != nil {
-		fmt.Errorf("dail rpc failed, err: %s\n", err)
+		fmt.Printf("dail rpc failed, err: %s\n", err)
 		if conn != nil {
 			conn.Close()
 		}
@@ -93,6 +101,7 @@ func (p *Peer) RequestVoteMe(lastLogIndex, lastTerm uint64) {
 	}
 }
 
+// RequestAppendEntries send a request to append entries
 func (p *Peer) RequestAppendEntries(entries []*pb.LogEntry, sindex, lindex, lterm uint64) {
 	if p.server.State() != Leader {
 		fmt.Println("only leader can request append entries.")

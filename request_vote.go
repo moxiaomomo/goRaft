@@ -1,16 +1,19 @@
 package raft
 
 import (
+	"sync"
+
 	pb "github.com/moxiaomomo/goRaft/proto"
 	"golang.org/x/net/context"
-	"sync"
 )
 
+// RequestVoteImp a vote-request implementation
 type RequestVoteImp struct {
 	mutex  sync.RWMutex
 	server *server
 }
 
+// RequestVoteMe handles the vote request from others
 func (e *RequestVoteImp) RequestVoteMe(ctx context.Context, req *pb.VoteRequest) (*pb.VoteResponse, error) {
 	voteGranted := false
 

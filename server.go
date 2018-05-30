@@ -3,9 +3,6 @@ package raft
 import (
 	"encoding/json"
 	"fmt"
-	pb "github.com/moxiaomomo/goRaft/proto"
-	"github.com/moxiaomomo/goRaft/util"
-	"google.golang.org/grpc"
 	"io/ioutil"
 	"math/rand"
 	"net"
@@ -14,8 +11,13 @@ import (
 	"path"
 	"sync"
 	"time"
+
+	pb "github.com/moxiaomomo/goRaft/proto"
+	"github.com/moxiaomomo/goRaft/util"
+	"google.golang.org/grpc"
 )
 
+// HandleFuncType external handle function type
 type HandleFuncType func(w http.ResponseWriter, r *http.Request)
 
 type server struct {
@@ -46,6 +48,7 @@ type server struct {
 	syncpeer map[string]int
 }
 
+// Server current server operations
 type Server interface {
 	Start() error
 	State() string
@@ -60,6 +63,7 @@ type Server interface {
 	OnAppendEntry(cmd Command, cmds []byte)
 }
 
+// NewServer creates a new server instance
 func NewServer(workdir string, confPath string) (Server, error) {
 	_ = os.Mkdir(workdir, 0700)
 	s := &server{
@@ -75,6 +79,7 @@ func NewServer(workdir string, confPath string) (Server, error) {
 	return s, nil
 }
 
+// SetTerm set current term
 func (s *server) SetTerm(term uint64) {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
@@ -82,17 +87,17 @@ func (s *server) SetTerm(term uint64) {
 	s.currentTerm = term
 }
 
+// SyncPeerStatusOrReset update or reset peers' response status
 func (s *server) SyncPeerStatusOrReset() int {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 
-	sucCnt := 0
-	failCnt := 0
+	sucCnt, failCnt := 0, 0
 	for _, v := range s.syncpeer {
 		if v == 1 {
-			sucCnt += 1
+			sucCnt++
 		} else if v == 0 {
-			failCnt += 1
+			failCnt++
 		}
 	}
 
@@ -161,7 +166,7 @@ func (s *server) IncrTermForvote() {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 
-	s.currentTerm += 1
+	s.currentTerm++
 }
 
 func (s *server) SetState(state string) {
@@ -259,7 +264,7 @@ func (s *server) Init() error {
 // enter loop with a propriate state
 func (s *server) Start() error {
 	if s.IsRunning() {
-		return fmt.Errorf("server has been running with state:%d", s.State())
+		return fmt.Errorf("server has been running with state:%s", s.State())
 	}
 
 	if err := s.Init(); err != nil {
@@ -323,7 +328,7 @@ func (s *server) OnAppendEntry(cmd Command, cmds []byte) {
 	}
 	s.log.AppendEntry(&LogEntry{Entry: entry})
 
-	for idx, _ := range s.peers {
+	for idx := range s.peers {
 		if s.conf.Host == s.peers[idx].Host {
 			continue
 		}
@@ -451,7 +456,7 @@ func (s *server) candidateLoop() {
 			s.IncrTermForvote()
 			s.VoteForSelf()
 			lindex, lterm := s.log.LastLogInfo()
-			for idx, _ := range s.peers {
+			for idx := range s.peers {
 				if s.conf.Host == s.peers[idx].Host {
 					continue
 				}
@@ -501,7 +506,7 @@ func (s *server) leaderLoop() {
 	}
 	s.log.AppendEntry(&LogEntry{Entry: entry})
 
-	for idx, _ := range s.peers {
+	for idx := range s.peers {
 		if s.conf.Host == s.peers[idx].Host {
 			continue
 		}
@@ -553,7 +558,7 @@ func (s *server) leaderLoop() {
 			findex := s.log.FirstLogIndex()
 			lindex, lterm := s.log.LastLogInfo()
 			s.syncpeer[s.conf.Host] = 1
-			for idx, _ := range s.peers {
+			for idx := range s.peers {
 				if s.conf.Host == s.peers[idx].Host {
 					continue
 				}
@@ -572,7 +577,7 @@ func (s *server) leaderLoop() {
 func (s *server) onMemberChanged(entry *pb.LogEntry) {
 	findex := s.log.FirstLogIndex()
 	lindex, lterm := s.log.LastLogInfo()
-	for idx, _ := range s.peers {
+	for idx := range s.peers {
 		if s.conf.Host == s.peers[idx].Host {
 			s.log.AppendEntry(&LogEntry{Entry: entry})
 			continue
@@ -610,7 +615,7 @@ func (s *server) onSnapShotting() {
 	for _, entry := range s.log.entries {
 		pbentries = append(pbentries, entry.Entry)
 	}
-	for idx, _ := range s.peers {
+	for idx := range s.peers {
 		if s.conf.Host == s.peers[idx].Host {
 			continue
 		}
@@ -619,7 +624,7 @@ func (s *server) onSnapShotting() {
 }
 
 func (s *server) resetSyncPeer() {
-	for k, _ := range s.syncpeer {
+	for k := range s.syncpeer {
 		s.syncpeer[k] = -1
 	}
 }

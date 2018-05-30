@@ -22,6 +22,7 @@ func redirect(w http.ResponseWriter, r *http.Request, s *server) {
 	}
 }
 
+// JoinHandler handles the join request from clients
 func JoinHandler(w http.ResponseWriter, r *http.Request, s *server) {
 	if s.State() == Leader {
 		r.ParseForm()
@@ -32,6 +33,7 @@ func JoinHandler(w http.ResponseWriter, r *http.Request, s *server) {
 	}
 }
 
+// LeaveHandler handles the leave request from clients
 func LeaveHandler(w http.ResponseWriter, r *http.Request, s *server) {
 	if s.State() == Leader {
 		r.ParseForm()

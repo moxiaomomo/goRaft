@@ -9,13 +9,14 @@ import (
 	"path"
 )
 
+// ServerState server's current status
 type ServerState struct {
 	CommitIndex uint64 `json:"commitIndex"`
 	Term        uint64 `json:"term"`
 	VoteFor     string `json:"voteFor"`
 }
 
-// save data into file
+// FlushState save data into file
 func (s *server) FlushState() error {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
@@ -45,7 +46,7 @@ func (s *server) FlushState() error {
 	return nil
 }
 
-// load data from file
+// LoadState load data from file
 func (s *server) LoadState() error {
 	logpath := path.Join(s.path, "internlog")
 	fname := fmt.Sprintf("%s/state-%s", logpath, s.conf.Name)

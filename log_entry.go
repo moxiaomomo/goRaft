@@ -4,20 +4,24 @@ import (
 	"bufio"
 	"encoding/binary"
 	//	"fmt"
+	"os"
+
 	"github.com/golang/protobuf/proto"
 	pb "github.com/moxiaomomo/goRaft/proto"
-	"os"
 )
 
+// LogEntryMeta metadata of a logentry
 type LogEntryMeta struct {
 	DataLength uint32
 }
 
+// LogEntry logentry
 type LogEntry struct {
 	Entry       *pb.LogEntry
 	LogPosition uint64 // position in logfile
 }
 
+// NewLogEntry creates a new logentry instance
 func NewLogEntry(curterm, curindex uint64, commandname string, command []byte) *LogEntry {
 	lu := &LogEntry{
 		Entry: &pb.LogEntry{

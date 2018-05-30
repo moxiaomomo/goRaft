@@ -7,14 +7,14 @@ import (
 	"sync"
 )
 
+// Log contains logentry info
 type Log struct {
 	ApplyFunc func(*LogEntry, Command) (interface{}, error)
 
-	mutex     sync.RWMutex
-	file      *os.File
-	path      string
-	entries   []*LogEntry
-	toc_entry LogEntry
+	mutex   sync.RWMutex
+	file    *os.File
+	path    string
+	entries []*LogEntry
 
 	startIndex  uint64
 	commitIndex uint64
@@ -24,13 +24,13 @@ type Log struct {
 func newLog() *Log {
 	log := &Log{
 		entries:     make([]*LogEntry, 0),
-		toc_entry:   LogEntry{},
 		commitIndex: 0,
 		startIndex:  0,
 	}
 	return log
 }
 
+// LastCommitInfo return the latest commit log info
 func (l *Log) LastCommitInfo() (index uint64, term uint64) {
 	l.mutex.Lock()
 	defer l.mutex.Unlock()
@@ -44,6 +44,7 @@ func (l *Log) LastCommitInfo() (index uint64, term uint64) {
 	return last.Entry.Index, last.Entry.Term
 }
 
+// IsEmpty check if logentry is empty
 func (l *Log) IsEmpty() bool {
 	l.mutex.Lock()
 	defer l.mutex.Unlock()
@@ -51,6 +52,7 @@ func (l *Log) IsEmpty() bool {
 	return len(l.entries) == 0
 }
 
+// PreLastLogInfo returns the logentry before the last one
 func (l *Log) PreLastLogInfo() (index uint64, term uint64) {
 	l.mutex.Lock()
 	defer l.mutex.Unlock()
@@ -63,6 +65,7 @@ func (l *Log) PreLastLogInfo() (index uint64, term uint64) {
 	return last.Entry.Index, last.Entry.Term
 }
 
+// FirstLogIndex returns the index of the first logentry
 func (l *Log) FirstLogIndex() uint64 {
 	l.mutex.Lock()
 	defer l.mutex.Unlock()
@@ -74,6 +77,7 @@ func (l *Log) FirstLogIndex() uint64 {
 	return l.entries[0].Entry.Index
 }
 
+// LastLogIndex returns the index of the last logentry
 func (l *Log) LastLogIndex() uint64 {
 	l.mutex.Lock()
 	defer l.mutex.Unlock()
@@ -86,6 +90,7 @@ func (l *Log) LastLogIndex() uint64 {
 	return last.Entry.Index
 }
 
+// LastLogInfo returns the last logentry info
 func (l *Log) LastLogInfo() (index uint64, term uint64) {
 	l.mutex.Lock()
 	defer l.mutex.Unlock()
@@ -98,6 +103,7 @@ func (l *Log) LastLogInfo() (index uint64, term uint64) {
 	return last.Entry.Index, last.Entry.Term
 }
 
+// GetLogEntries returns the log entries with the index from s to e
 func (l *Log) GetLogEntries(s, e int) []*LogEntry {
 	l.mutex.Lock()
 	defer l.mutex.Unlock()
@@ -114,6 +120,7 @@ func (l *Log) GetLogEntries(s, e int) []*LogEntry {
 	return l.entries[s:e]
 }
 
+// LogInit initiate the log info
 func (l *Log) LogInit(path string) error {
 	l.mutex.Lock()
 	defer l.mutex.Unlock()
@@ -155,6 +162,7 @@ func (l *Log) LogInit(path string) error {
 	return nil
 }
 
+// AppendEntry append entry into the persistent logfile
 func (l *Log) AppendEntry(lu *LogEntry) error {
 	l.mutex.Lock()
 	defer l.mutex.Unlock()
@@ -167,6 +175,7 @@ func (l *Log) AppendEntry(lu *LogEntry) error {
 	return nil
 }
 
+// RefreshLog overwrite log entries from memory into storage file
 func (l *Log) RefreshLog() error {
 	l.mutex.Lock()
 	defer l.mutex.Unlock()
@@ -184,6 +193,7 @@ func (l *Log) RefreshLog() error {
 	return nil
 }
 
+// UpdateCommitIndex update committed log index
 func (l *Log) UpdateCommitIndex(index uint64) {
 	l.mutex.Lock()
 	defer l.mutex.Unlock()
@@ -205,6 +215,7 @@ func (l *Log) UpdateCommitIndex(index uint64) {
 	l.commitIndex = index
 }
 
+// CommitIndex returns the committed log index
 func (l *Log) CommitIndex() uint64 {
 	l.mutex.Lock()
 	defer l.mutex.Unlock()
@@ -212,6 +223,7 @@ func (l *Log) CommitIndex() uint64 {
 	return l.commitIndex
 }
 
+// LogEntriesToSync returns the log entris to synchronize to others
 func (l *Log) LogEntriesToSync(fromterm uint64) []*LogEntry {
 	lulist := []*LogEntry{}
 	for _, l := range l.entries {
