@@ -1,0 +1,8 @@
+language: go
+
+go:
+  - "1.x"
+  - "1.9"
+  - master
+
+script: go test -v -confpath='raft_test0.cfg' -exittime=5
