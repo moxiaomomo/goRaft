@@ -1,5 +1,8 @@
 ## goRaft 简介
 
+[![Build Status](https://travis-ci.org/moxiaomomo/goRaft.svg?branch=master)](https://travis-ci.org/moxiaomomo/goRaft)
+[![Go Report Card](https://goreportcard.com/badge/github.com/moxiaomomo/goraft)](https://goreportcard.com/report/github.com/moxiaomomo/goraft)
+
 #### raft协议的go版本，实现功能包括：
 
 -  选主投票
