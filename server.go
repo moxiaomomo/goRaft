@@ -14,6 +14,7 @@ import (
 
 	pb "github.com/moxiaomomo/goRaft/proto"
 	"github.com/moxiaomomo/goRaft/util"
+	"github.com/moxiaomomo/goRaft/util/logger"
 	"google.golang.org/grpc"
 )
 
@@ -228,17 +229,17 @@ func (s *server) Init() error {
 
 	err = s.loadConf()
 	if err != nil {
-		fmt.Println(err)
+		logger.LogError(err)
 		return fmt.Errorf("raft load config error: %s", err)
 	}
-	fmt.Printf("config: %+v\n", s.conf)
+	logger.LogInfof("config: %+v\n", s.conf)
 
 	logpath := path.Join(s.path, "internlog")
 	err = os.MkdirAll(logpath, 0700)
 	if err != nil && !os.IsExist(err) {
 		return fmt.Errorf("raft-log initiation error: %s", err)
 	}
-	fmt.Printf("%+v\n", s.conf)
+	logger.LogInfof("%+v\n", s.conf)
 	if err = s.log.LogInit(fmt.Sprintf("%s/%s%s", logpath, s.conf.LogPrefix, s.conf.Name)); err != nil {
 		return fmt.Errorf("raft-log initiation error: %s", err)
 	}
@@ -288,7 +289,7 @@ func (s *server) StartInternServe() {
 	pb.RegisterRequestVoteServer(server, &RequestVoteImp{server: s})
 	pb.RegisterAppendEntriesServer(server, &AppendEntriesImp{server: s})
 
-	fmt.Printf("listen internal rpc address: %s\n", s.conf.Host)
+	logger.LogInfof("listen internal rpc address: %s\n", s.conf.Host)
 	address, err := net.Listen("tcp", s.conf.Host)
 	if err != nil {
 		panic(err)
@@ -328,11 +329,13 @@ func (s *server) OnAppendEntry(cmd Command, cmds []byte) {
 	}
 	s.log.AppendEntry(&LogEntry{Entry: entry})
 
-	for idx := range s.peers {
-		if s.conf.Host == s.peers[idx].Host {
-			continue
+	if s.State() == Leader {
+		for idx := range s.peers {
+			if s.conf.Host == s.peers[idx].Host {
+				continue
+			}
+			go s.peers[idx].RequestAppendEntries([]*pb.LogEntry{entry}, findex, lindex, lterm)
 		}
-		go s.peers[idx].RequestAppendEntries([]*pb.LogEntry{entry}, findex, lindex, lterm)
 	}
 }
 
@@ -351,7 +354,7 @@ func (s *server) AddPeer(name string, host string) error {
 	}
 
 	// to flush configuration
-	fmt.Println("To rewrite configuration to persistent storage.")
+	logger.LogInfo("To rewrite configuration to persistent storage.")
 	_ = s.writeConf()
 
 	s.mutex.Unlock()
@@ -384,7 +387,7 @@ func (s *server) RemovePeer(name string, host string) error {
 	delete(s.peers, host)
 
 	// to flush configuration
-	fmt.Println("To rewrite configuration to persistent storage.")
+	logger.LogInfo("To rewrite configuration to persistent storage.")
 	_ = s.writeConf()
 	s.mutex.Unlock()
 
@@ -409,7 +412,7 @@ func (s *server) RemovePeer(name string, host string) error {
 
 func (s *server) loop() {
 	for s.State() != Stopped {
-		fmt.Printf("current state:%s, term:%d\n", s.State(), s.currentTerm)
+		logger.LogInfof("current state:%s, term:%d\n", s.State(), s.currentTerm)
 		switch s.State() {
 		case Follower:
 			s.followerLoop()
