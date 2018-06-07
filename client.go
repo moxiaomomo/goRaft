@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"net/http"
 	"time"
+
+	"github.com/moxiaomomo/goRaft/util/logger"
 )
 
 func redirect(w http.ResponseWriter, r *http.Request, s *server) {
@@ -55,10 +57,10 @@ func (s *server) StartExternServe() {
 	for url := range s.handlefunc {
 		http.HandleFunc(url, s.handlefunc[url])
 	}
-	fmt.Printf("extra handlefunc: %+v\n", s.handlefunc)
+	logger.LogInfof("extra handlefunc: %+v\n", s.handlefunc)
 
 	http.HandleFunc("/internal/join", func(w http.ResponseWriter, r *http.Request) { JoinHandler(w, r, s) })
 	http.HandleFunc("/internal/leave", func(w http.ResponseWriter, r *http.Request) { LeaveHandler(w, r, s) })
-	fmt.Printf("listen client address: %s\n", s.conf.Client)
+	logger.LogInfof("listen client address: %s\n", s.conf.Client)
 	http.ListenAndServe(s.conf.Client, nil)
 }

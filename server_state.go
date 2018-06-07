@@ -7,6 +7,8 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
+
+	"github.com/moxiaomomo/goRaft/util/logger"
 )
 
 // ServerState server's current status
@@ -68,7 +70,7 @@ func (s *server) LoadState() error {
 	if err = json.Unmarshal(b, srvstate); err != nil {
 		return err
 	}
-	fmt.Printf("state loaded: %+v\n", srvstate)
+	logger.LogInfof("state loaded: %+v\n", srvstate)
 	s.log.UpdateCommitIndex(srvstate.CommitIndex)
 	s.SetTerm(srvstate.Term)
 	return nil

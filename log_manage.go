@@ -5,6 +5,8 @@ import (
 	"io"
 	"os"
 	"sync"
+
+	"github.com/moxiaomomo/goRaft/util/logger"
 )
 
 // Log contains logentry info
@@ -202,13 +204,14 @@ func (l *Log) UpdateCommitIndex(index uint64) {
 		return
 	}
 	if len(l.entries) == 0 {
-		fmt.Println("Local log is empty, not to update commitindex.")
+		logger.LogWarn("local log is empty, not to update commitindex.")
 		return
 	}
 
 	lastindex := l.entries[len(l.entries)-1].Entry.GetIndex()
 	if index > lastindex {
-		fmt.Printf("Local log is too old or index to commit is invalid,%d:%d\n", index, lastindex)
+		logger.LogWarnf("local log is too old or index to commit is invalid,%d:%d\n",
+			index, lastindex)
 		return
 	}
 
