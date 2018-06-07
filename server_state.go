@@ -59,6 +59,8 @@ func (s *server) LoadState() error {
 	b, err := ioutil.ReadFile(fname)
 	if err != nil {
 		return err
+	} else if len(b) == 0 {
+		return nil
 	}
 
 	//s.srvstate = ServerState{}
