@@ -21,4 +21,13 @@ const (
 	VoteRejected = 1
 	// VoteGranted node has voted for a term
 	VoteGranted = 2
+
+	// EnvClusterNodeHosts environment variable
+	EnvClusterNodeHosts = "MEMBER_NODES"
+	// EnvClusterNodeSrvAddr environment variable
+	EnvClusterNodeSrvAddr = "MEMBER_NODE_SRV"
+	// EnvClusterNodeCliAddr environment variable
+	EnvClusterNodeCliAddr = "MEMBER_NODE_CLI"
+	// EnvClusterNodeName environment variable
+	EnvClusterNodeName = "MEMBER_NODE_Name"
 )

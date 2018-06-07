@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"path"
+	"strings"
 	"sync"
 	"time"
 
@@ -64,9 +65,35 @@ type Server interface {
 	OnAppendEntry(cmd Command, cmds []byte)
 }
 
+func pathExists(path string) (bool, error) {
+	_, err := os.Stat(path)
+	if err == nil {
+		return true, nil
+	}
+	if os.IsNotExist(err) {
+		return false, nil
+	}
+	return true, err
+}
+
 // NewServer creates a new server instance
 func NewServer(workdir string, confPath string) (Server, error) {
 	_ = os.Mkdir(workdir, 0700)
+
+	if confPath == "" || !strings.Contains(confPath, "/") {
+		confPath = "/opt/raft/raft.cfg"
+	}
+	confdir := confPath[0:strings.LastIndex(confPath, "/")]
+	if exist, _ := pathExists(confdir); !exist {
+		os.MkdirAll(confdir, 0700)
+	}
+	if exist, _ := pathExists(confPath); !exist {
+		defaultCfg := `{"logprefix":"raft-log-","commitIndex":0,
+			"peerHosts":["0.0.0.0:3000","0.0.0.0:3001","0.0.0.0:3002"],
+			"host":"0.0.0.0:3000","client":"0.0.0.0:4000","name":"server0"}`
+		ioutil.WriteFile(confPath, []byte(defaultCfg), 0644)
+	}
+
 	s := &server{
 		path:              workdir,
 		confPath:          confPath,
@@ -647,6 +674,21 @@ func (s *server) loadConf() error {
 		return err
 	}
 	s.conf = conf
+
+	// read env-variable
+	if nodes := os.Getenv(EnvClusterNodeHosts); len(nodes) > 0 {
+		s.conf.PeerHosts = strings.Split(nodes, ",")
+	}
+	if srvaddr := os.Getenv(EnvClusterNodeSrvAddr); len(srvaddr) > 0 {
+		s.conf.Host = srvaddr
+	}
+	if cliaddr := os.Getenv(EnvClusterNodeCliAddr); len(cliaddr) > 0 {
+		s.conf.Client = cliaddr
+	}
+	if srvname := os.Getenv(EnvClusterNodeName); len(srvname) > 0 {
+		s.conf.Name = srvname
+	}
+
 	s.peers = make(map[string]*Peer)
 	for _, c := range s.conf.PeerHosts {
 		s.peers[c] = &Peer{
