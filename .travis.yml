@@ -5,4 +5,4 @@ go:
   - "1.9"
   - master
 
-script: go test -v -confpath='raft_test0.cfg' -exittime=5
+script: go test -v -confpath='/opt/raft/raft_test0.cfg' -exittime=5
