@@ -24,7 +24,7 @@
 
 在主目录下，启动多个测试节点，比如(测试配置文件中定义了三个节点):
 ```bash
-$ go test -confpath raft_test0.cfg
+$ go test -confpath /opt/raft/raft_test0.cfg
 config: &{LogPrefix:raft-log- CommitIndex:0 PeerHosts:[127.0.0.1:3001 127.0.0.1:3002 127.0.0.1:3000] Host:127.0.0.1:3000 Client:127.0.0.1:4000 Name:server0}
 state loaded: &{CommitIndex:2 Term:87 VoteFor:}
 current state:follower, term:87
@@ -37,7 +37,7 @@ To rewrite configuration to persistent storage.
 Appendentries succeeded: 127.0.0.1:3003 Success:true Term:95 Index:4 
 ```
 ```bash
-$ go test -confpath raft_test1.cfg
+$ go test -confpath /opt/raft/raft_test1.cfg
 config: &{LogPrefix:raft-log- CommitIndex:0 PeerHosts:[127.0.0.1:3002 127.0.0.1:3000 127.0.0.1:3001] Host:127.0.0.1:3001 Client:127.0.0.1:4001 Name:server1}
 state loaded: &{CommitIndex:2 Term:87 VoteFor:}
 current state:follower, term:87
@@ -48,7 +48,7 @@ current state:candidate, term:87
 current state:follower, term:95
 ```
 ```bash
-$ go test -confpath raft_test2.cfg
+$ go test -confpath /opt/raft/raft_test2.cfg
 config: &{LogPrefix:raft-log- CommitIndex:0 PeerHosts:[127.0.0.1:3002 127.0.0.1:3000 127.0.0.1:3001] Host:127.0.0.1:3002 Client:127.0.0.1:4002 Name:server2}
 state loaded: &{CommitIndex:2 Term:87 VoteFor:}
 current state:follower, term:87
