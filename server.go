@@ -2,6 +2,7 @@ package raft
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"math/rand"
@@ -81,7 +82,11 @@ func NewServer(workdir string, confPath string) (Server, error) {
 	_ = os.Mkdir(workdir, 0700)
 
 	if confPath == "" || !strings.Contains(confPath, "/") {
-		confPath = "/opt/raft/raft.cfg"
+		srvaddr := os.Getenv(EnvClusterNodeSrvAddr)
+		if len(srvaddr) <= 0 {
+			return nil, errors.New("Invalid configuration")
+		}
+		confPath = fmt.Sprintf("/opt/raft/raft_%s.cfg", srvaddr)
 	}
 	confdir := confPath[0:strings.LastIndex(confPath, "/")]
 	if exist, _ := pathExists(confdir); !exist {
@@ -256,7 +261,6 @@ func (s *server) Init() error {
 
 	err = s.loadConf()
 	if err != nil {
-		logger.LogError(err)
 		return fmt.Errorf("raft load config error: %s", err)
 	}
 	logger.LogInfof("config: %+v\n", s.conf)
@@ -690,15 +694,22 @@ func (s *server) loadConf() error {
 	}
 
 	s.peers = make(map[string]*Peer)
+	hostInPeers := false
 	for _, c := range s.conf.PeerHosts {
+		if c == s.conf.Host {
+			hostInPeers = true
+		}
 		s.peers[c] = &Peer{
 			Name:   c,
 			Host:   c,
 			server: s,
 		}
 	}
-	s.ch = make(chan interface{}, len(s.peers)*2)
+	if !hostInPeers {
+		return errors.New("Current host not in the cluster nodes list")
+	}
 
+	s.ch = make(chan interface{}, len(s.peers)*2)
 	return nil
 }
 
