@@ -1,6 +1,7 @@
 package raft
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"time"
@@ -21,6 +22,21 @@ func redirect(w http.ResponseWriter, r *http.Request, s *server) {
 		w.Write([]byte(err.Error()))
 	} else {
 		w.Write([]byte("Member changed OK.\n"))
+	}
+}
+
+// GetLeaderHandler handles the get-leader request from clients
+func GetLeaderHandler(w http.ResponseWriter, r *http.Request, s *server) {
+	ret := map[string]string{
+		"leadername":   s.currentLeaderName,
+		"leaderhost":   s.currentLeaderHost,
+		"leaderexhost": s.currentLeaderExHost,
+	}
+	b, err := json.Marshal(ret)
+	if err != nil {
+		w.Write([]byte("Internel server error!\n"))
+	} else {
+		w.Write([]byte(b))
 	}
 }
 
@@ -59,8 +75,10 @@ func (s *server) StartExternServe() {
 	}
 	logger.LogInfof("extra handlefunc: %+v\n", s.handlefunc)
 
-	http.HandleFunc("/internal/join", func(w http.ResponseWriter, r *http.Request) { JoinHandler(w, r, s) })
-	http.HandleFunc("/internal/leave", func(w http.ResponseWriter, r *http.Request) { LeaveHandler(w, r, s) })
+	http.HandleFunc("/intern/join", func(w http.ResponseWriter, r *http.Request) { JoinHandler(w, r, s) })
+	http.HandleFunc("/intern/leave", func(w http.ResponseWriter, r *http.Request) { LeaveHandler(w, r, s) })
+	http.HandleFunc("/intern/getleader", func(w http.ResponseWriter, r *http.Request) { GetLeaderHandler(w, r, s) })
+
 	logger.LogInfof("listen client address: %s\n", s.conf.Client)
 	http.ListenAndServe(s.conf.Client, nil)
 }

@@ -29,5 +29,7 @@ const (
 	// EnvClusterNodeCliAddr environment variable
 	EnvClusterNodeCliAddr = "MEMBER_NODE_CLI"
 	// EnvClusterNodeName environment variable
-	EnvClusterNodeName = "MEMBER_NODE_Name"
+	EnvClusterNodeName = "MEMBER_NODE_NAME"
+	// EnvDockerContainer environment variable
+	EnvDockerContainer = "DOCKER_CONTAINER"
 )
