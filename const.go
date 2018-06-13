@@ -1,6 +1,8 @@
 package raft
 
 const (
+	// Bootstrapping wait for others to join
+	Bootstrapping = "bootstrapping"
 	// Initiated initiated status
 	Initiated = "initiated"
 	// Snapshotting snapshotting status
@@ -32,4 +34,8 @@ const (
 	EnvClusterNodeName = "MEMBER_NODE_NAME"
 	// EnvDockerContainer environment variable
 	EnvDockerContainer = "DOCKER_CONTAINER"
+	// EnvJoinTarget the target node to join
+	EnvJoinTarget = "JOIN_TARGET"
+	// EnvBootstrapExpect node number exptected
+	EnvBootstrapExpect = "BOOTSTRAP_EXPECT"
 )

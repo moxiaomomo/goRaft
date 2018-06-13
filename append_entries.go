@@ -3,6 +3,7 @@ package raft
 import (
 	//	"encoding/json"
 	//	"fmt"
+
 	"sync"
 
 	pb "github.com/moxiaomomo/goRaft/proto"
@@ -28,14 +29,14 @@ func (e *AppendEntriesImp) AppendEntries(ctx context.Context, req *pb.AppendEntr
 	}
 	lindex, _ := e.server.log.LastLogInfo()
 
-	pb := &pb.AppendEntriesResponse{
+	pbres := &pb.AppendEntriesResponse{
 		Success: false,
 		Index:   lindex,
 		Term:    req.GetTerm(),
 	}
 
 	// peer host should be in the configuration
-	if e.server.IsServerMember(req.LeaderHost) {
+	if e.server.IsServerMember(req.LeaderName) {
 		// update current server state
 		e.server.SetState(Follower)
 		e.server.currentTerm = req.GetTerm()
@@ -52,17 +53,17 @@ func (e *AppendEntriesImp) AppendEntries(ctx context.Context, req *pb.AppendEntr
 				e.server.log.entries = append(e.server.log.entries, &LogEntry{Entry: entry})
 			}
 			e.server.log.RefreshLog()
-			pb.Success = true
+			pbres.Success = true
 			// 2.if req-entries's startindex is later than current server's lastlogindex,
 			//   or the current server's log is empty,
 			//   to request re-send fulllog
 		} else if req.GetFirstLogIndex() > lindex || e.server.log.IsEmpty() {
-			pb.Success = false
-			pb.Index = 0
+			pbres.Success = false
+			pbres.Index = 0
 			// 3.if req-entries's prelogindex is later than current server's lastlogindex,
 			//   to request re-send logs from the position of lindex
 		} else if req.GetPreLogIndex() > lindex {
-			pb.Success = false
+			pbres.Success = false
 			// 4. if req-entries's prelogindex is earlier than current server's lastlogindex,
 			//    truncate reqentries and append into local logfile
 		} else if req.GetPreLogIndex() < lindex {
@@ -75,15 +76,15 @@ func (e *AppendEntriesImp) AppendEntries(ctx context.Context, req *pb.AppendEntr
 			}
 			// 5.if backindex<0, something imnormal...just to request re-send fulllog
 			if backindex < 0 {
-				pb.Success = false
-				pb.Index = 0
+				pbres.Success = false
+				pbres.Index = 0
 			} else {
 				e.server.log.entries = e.server.log.entries[0 : backindex+1]
 				e.server.log.RefreshLog()
 				for _, entry := range reqentries {
 					e.server.log.AppendEntry(&LogEntry{Entry: entry})
 				}
-				pb.Success = true
+				pbres.Success = true
 			}
 			// 6.if req-entries's prelogindex is equal to current server's lastlogindex,
 			//   just to append reqentries into logfile
@@ -91,12 +92,12 @@ func (e *AppendEntriesImp) AppendEntries(ctx context.Context, req *pb.AppendEntr
 			for _, entry := range reqentries {
 				e.server.log.AppendEntry(&LogEntry{Entry: entry})
 			}
-			pb.Success = true
+			pbres.Success = true
 		}
 	}
 
 	// if appendentries succeeded, apply commands and update committed index
-	if pb.Success {
+	if pbres.Success {
 		cmiindex, _ := e.server.log.LastCommitInfo()
 		// apply the command
 		if req.GetCommitIndex() > cmiindex {
@@ -118,8 +119,8 @@ func (e *AppendEntriesImp) AppendEntries(ctx context.Context, req *pb.AppendEntr
 		} else {
 			e.server.log.UpdateCommitIndex(lindex)
 		}
-		pb.Index = lindex
+		pbres.Index = lindex
 	}
 
-	return pb, nil
+	return pbres, nil
 }

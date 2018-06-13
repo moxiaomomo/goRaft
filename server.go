@@ -81,23 +81,18 @@ func pathExists(path string) (bool, error) {
 func NewServer(workdir string, confPath string) (Server, error) {
 	_ = os.Mkdir(workdir, 0700)
 
+	params := ParseEnvParams()
+	fmt.Printf("%+v\n", params)
 	if confPath == "" || !strings.Contains(confPath, "/") {
-		srvaddr := os.Getenv(EnvClusterNodeSrvAddr)
-		if len(srvaddr) <= 0 {
-			return nil, errors.New("Invalid configuration")
-		}
-		confPath = fmt.Sprintf("/opt/raft/raft_%s.cfg", srvaddr)
+		confPath = fmt.Sprintf("/opt/raft/raft_%s.cfg", params.SvrName)
 	}
+
 	confdir := confPath[0:strings.LastIndex(confPath, "/")]
 	if exist, _ := pathExists(confdir); !exist {
 		os.MkdirAll(confdir, 0700)
 	}
 	if exist, _ := pathExists(confPath); !exist {
-		if dc := os.Getenv(EnvDockerContainer); dc == "1" {
-			ioutil.WriteFile(confPath, []byte(DefaultConfigContain), 0644)
-		} else {
-			ioutil.WriteFile(confPath, []byte(DefaultConfig), 0644)
-		}
+		ioutil.WriteFile(confPath, []byte(DefaultConfig), 0644)
 	}
 
 	s := &server{
@@ -110,7 +105,26 @@ func NewServer(workdir string, confPath string) (Server, error) {
 		syncpeer:          make(map[string]int),
 		handlefunc:        make(map[string]HandleFuncType),
 	}
+
+	err := s.loadConf(params)
+	if err != nil {
+		return nil, err
+	}
+	if !s.ConfigValidate() {
+		return nil, errors.New("Invalid configuration")
+	}
+
 	return s, nil
+}
+
+func (s *server) ConfigValidate() bool {
+	if s.conf == nil {
+		return false
+	}
+	if s.conf.Name == "" || s.conf.Host == "" || s.conf.Client == "" {
+		return false
+	}
+	return true
 }
 
 // SetTerm set current term
@@ -215,14 +229,14 @@ func (s *server) VoteForSelf() {
 	defer s.mutex.Unlock()
 
 	s.syncpeer[s.conf.Host] = 1
-	s.peers[s.conf.Host].SetVoteRequestState(VoteGranted)
+	s.peers[s.conf.Name].SetVoteRequestState(VoteGranted)
 }
 
-func (s *server) IsServerMember(host string) bool {
+func (s *server) IsServerMember(name string) bool {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 
-	if _, ok := s.peers[host]; ok {
+	if _, ok := s.peers[name]; ok {
 		return true
 	}
 	return false
@@ -259,12 +273,6 @@ func (s *server) Init() error {
 	if err != nil && !os.IsExist(err) {
 		return fmt.Errorf("raft initiation error: %s", err)
 	}
-
-	err = s.loadConf()
-	if err != nil {
-		return fmt.Errorf("raft load config error: %s", err)
-	}
-	logger.LogInfof("config: %+v\n", s.conf)
 
 	logpath := path.Join(s.path, "internlog")
 	err = os.MkdirAll(logpath, 0700)
@@ -306,7 +314,11 @@ func (s *server) Start() error {
 
 	s.stopped = make(chan bool)
 
-	s.SetState(Follower)
+	if len(s.peers) >= s.conf.BootstrapExpect {
+		s.SetState(Follower)
+	} else {
+		s.SetState(Bootstrapping)
+	}
 
 	go s.StartInternServe()
 	go s.StartExternServe()
@@ -317,9 +329,10 @@ func (s *server) Start() error {
 }
 
 func (s *server) StartInternServe() {
-	server := grpc.NewServer()
-	pb.RegisterRequestVoteServer(server, &RequestVoteImp{server: s})
-	pb.RegisterAppendEntriesServer(server, &AppendEntriesImp{server: s})
+	rpcserver := grpc.NewServer()
+	pb.RegisterRequestVoteServer(rpcserver, &RequestVoteImp{server: s})
+	pb.RegisterAppendEntriesServer(rpcserver, &AppendEntriesImp{server: s})
+	pb.RegisterDiscoveryAsBootServer(rpcserver, s)
 
 	logger.LogInfof("listen internal rpc address: %s\n", s.conf.Host)
 	address, err := net.Listen("tcp", s.conf.Host)
@@ -327,7 +340,7 @@ func (s *server) StartInternServe() {
 		panic(err)
 	}
 
-	if err := server.Serve(address); err != nil {
+	if err := rpcserver.Serve(address); err != nil {
 		panic(err)
 	}
 }
@@ -362,11 +375,11 @@ func (s *server) OnAppendEntry(cmd Command, cmds []byte) {
 	s.log.AppendEntry(&LogEntry{Entry: entry})
 
 	if s.State() == Leader {
-		for idx := range s.peers {
-			if s.conf.Host == s.peers[idx].Host {
+		for svrname := range s.peers {
+			if s.conf.Name == svrname {
 				continue
 			}
-			go s.peers[idx].RequestAppendEntries([]*pb.LogEntry{entry}, findex, lindex, lterm)
+			go s.peers[svrname].RequestAppendEntries([]*pb.LogEntry{entry}, findex, lindex, lterm)
 		}
 	}
 }
@@ -374,7 +387,7 @@ func (s *server) OnAppendEntry(cmd Command, cmds []byte) {
 func (s *server) AddPeer(name string, host string) error {
 	s.mutex.Lock()
 
-	if s.peers[host] != nil {
+	if s.peers[name] != nil {
 		s.mutex.Unlock()
 		return nil
 	}
@@ -382,7 +395,7 @@ func (s *server) AddPeer(name string, host string) error {
 	if s.conf.Name != name {
 		ti := time.Duration(s.heartbeatInterval) * time.Millisecond
 		peer := NewPeer(s, name, host, ti)
-		s.peers[host] = peer
+		s.peers[name] = peer
 	}
 
 	// to flush configuration
@@ -411,12 +424,12 @@ func (s *server) AddPeer(name string, host string) error {
 
 func (s *server) RemovePeer(name string, host string) error {
 	s.mutex.Lock()
-	if s.peers[host] == nil || s.conf.Host == host {
+	if s.peers[name] == nil || s.conf.Name == name {
 		s.mutex.Unlock()
 		return nil
 	}
 
-	delete(s.peers, host)
+	delete(s.peers, name)
 
 	// to flush configuration
 	logger.LogInfo("To rewrite configuration to persistent storage.")
@@ -446,6 +459,8 @@ func (s *server) loop() {
 	for s.State() != Stopped {
 		logger.LogInfof("current state:%s, term:%d\n", s.State(), s.currentTerm)
 		switch s.State() {
+		case Bootstrapping:
+			s.bootstrappingLoop()
 		case Follower:
 			s.followerLoop()
 		case Candidate:
@@ -461,6 +476,23 @@ func (s *server) loop() {
 	}
 }
 
+func (s *server) bootstrappingLoop() {
+	t := time.NewTimer(time.Duration(100) * time.Millisecond)
+	for s.State() == Bootstrapping {
+		select {
+		case <-t.C:
+			if s.conf.JoinTarget != s.conf.Host {
+				s.PreJoinRequest()
+			}
+			if len(s.peers) >= s.conf.BootstrapExpect {
+				s.SetState(Candidate)
+				return
+			}
+			t.Reset(time.Duration(100) * time.Millisecond)
+		}
+	}
+}
+
 func (s *server) candidateLoop() {
 	t := time.NewTimer(time.Duration(150+rand.Intn(150)) * time.Millisecond)
 	for s.State() == Candidate {
@@ -471,10 +503,10 @@ func (s *server) candidateLoop() {
 				if d.Failed == false {
 					if d.Resp.VoteGranted {
 						s.syncpeer[d.PeerHost] = 1
-						s.peers[d.PeerHost].SetVoteRequestState(VoteGranted)
+						s.peers[d.PeerName].SetVoteRequestState(VoteGranted)
 					} else {
 						s.syncpeer[d.PeerHost] = 0
-						s.peers[d.PeerHost].SetVoteRequestState(VoteRejected)
+						s.peers[d.PeerName].SetVoteRequestState(VoteRejected)
 					}
 				}
 				respStatus := s.SyncPeerStatusOrReset()
@@ -491,11 +523,11 @@ func (s *server) candidateLoop() {
 			s.IncrTermForvote()
 			s.VoteForSelf()
 			lindex, lterm := s.log.LastLogInfo()
-			for idx := range s.peers {
-				if s.conf.Host == s.peers[idx].Host {
+			for svrname := range s.peers {
+				if s.conf.Name == svrname {
 					continue
 				}
-				go s.peers[idx].RequestVoteMe(lindex, lterm)
+				go s.peers[svrname].RequestVoteMe(lindex, lterm)
 			}
 			t.Reset(time.Duration(150+rand.Intn(150)) * time.Millisecond)
 		case isStop := <-s.stopped:
@@ -541,11 +573,11 @@ func (s *server) leaderLoop() {
 	}
 	s.log.AppendEntry(&LogEntry{Entry: entry})
 
-	for idx := range s.peers {
-		if s.conf.Host == s.peers[idx].Host {
+	for svrname := range s.peers {
+		if s.conf.Name == svrname {
 			continue
 		}
-		go s.peers[idx].RequestAppendEntries([]*pb.LogEntry{entry}, findex, lindex, lterm)
+		go s.peers[svrname].RequestAppendEntries([]*pb.LogEntry{entry}, findex, lindex, lterm)
 	}
 
 	// send heartbeat as leader state
@@ -593,11 +625,11 @@ func (s *server) leaderLoop() {
 			findex := s.log.FirstLogIndex()
 			lindex, lterm := s.log.LastLogInfo()
 			s.syncpeer[s.conf.Host] = 1
-			for idx := range s.peers {
-				if s.conf.Host == s.peers[idx].Host {
+			for svrname := range s.peers {
+				if s.conf.Name == svrname {
 					continue
 				}
-				go s.peers[idx].RequestAppendEntries([]*pb.LogEntry{}, findex, lindex, lterm)
+				go s.peers[svrname].RequestAppendEntries([]*pb.LogEntry{}, findex, lindex, lterm)
 			}
 			t.Reset(time.Duration(s.heartbeatInterval) * time.Millisecond)
 		case isStop := <-s.stopped:
@@ -612,12 +644,12 @@ func (s *server) leaderLoop() {
 func (s *server) onMemberChanged(entry *pb.LogEntry) {
 	findex := s.log.FirstLogIndex()
 	lindex, lterm := s.log.LastLogInfo()
-	for idx := range s.peers {
-		if s.conf.Host == s.peers[idx].Host {
+	for svrname := range s.peers {
+		if s.conf.Name == svrname {
 			s.log.AppendEntry(&LogEntry{Entry: entry})
 			continue
 		}
-		go s.peers[idx].RequestAppendEntries([]*pb.LogEntry{entry}, findex, lindex, lterm)
+		go s.peers[svrname].RequestAppendEntries([]*pb.LogEntry{entry}, findex, lindex, lterm)
 	}
 }
 
@@ -650,11 +682,11 @@ func (s *server) onSnapShotting() {
 	for _, entry := range s.log.entries {
 		pbentries = append(pbentries, entry.Entry)
 	}
-	for idx := range s.peers {
-		if s.conf.Host == s.peers[idx].Host {
+	for svrname := range s.peers {
+		if s.conf.Name == svrname {
 			continue
 		}
-		go s.peers[idx].RequestAppendEntries(pbentries, findex, lindex, lterm)
+		go s.peers[svrname].RequestAppendEntries(pbentries, findex, lindex, lterm)
 	}
 }
 
@@ -668,46 +700,50 @@ func (s *server) quorumSize() int {
 	return len(s.peers)/2 + 1
 }
 
-func (s *server) loadConf() error {
+func (s *server) loadConf(p Params) error {
 	cfg, err := ioutil.ReadFile(s.confPath)
 	if err != nil {
 		return err
 	}
 
-	conf := &Config{}
+	conf := &Config{
+		Peers: map[string]string{},
+	}
 	if err = json.Unmarshal(cfg, conf); err != nil {
 		return err
 	}
 	s.conf = conf
 
-	// read env-variable
-	if nodes := os.Getenv(EnvClusterNodeHosts); len(nodes) > 0 {
-		s.conf.PeerHosts = strings.Split(nodes, ",")
+	s.conf.Name = p.SvrName
+	s.conf.Host = p.SvrHost
+	s.conf.JoinTarget = p.JoinTarget
+	s.conf.Client = p.Client
+	s.conf.BootstrapExpect = p.BootstrapExpect
+
+	if len(s.conf.JoinTarget) <= 0 {
+		// join self
+		s.conf.JoinTarget = s.conf.Host
 	}
-	if srvaddr := os.Getenv(EnvClusterNodeSrvAddr); len(srvaddr) > 0 {
-		s.conf.Host = srvaddr
-	}
-	if cliaddr := os.Getenv(EnvClusterNodeCliAddr); len(cliaddr) > 0 {
-		s.conf.Client = cliaddr
-	}
-	if srvname := os.Getenv(EnvClusterNodeName); len(srvname) > 0 {
-		s.conf.Name = srvname
+	if s.conf.BootstrapExpect <= 0 {
+		s.conf.BootstrapExpect = 1
 	}
 
 	s.peers = make(map[string]*Peer)
-	hostInPeers := false
-	for _, c := range s.conf.PeerHosts {
-		if c == s.conf.Host {
-			hostInPeers = true
-		}
-		s.peers[c] = &Peer{
-			Name:   c,
-			Host:   c,
+	for svrname, svrhost := range s.conf.Peers {
+		s.peers[svrname] = &Peer{
+			Name:   svrname,
+			Host:   svrhost,
 			server: s,
 		}
 	}
-	if !hostInPeers {
-		return errors.New("Current host not in the cluster nodes list")
+
+	if _, ok := s.peers[s.conf.Name]; !ok {
+		s.peers[s.conf.Name] = &Peer{
+			Name:   s.conf.Name,
+			Host:   s.conf.Host,
+			server: s,
+		}
+		s.conf.Peers[s.conf.Name] = s.conf.Host
 	}
 
 	s.ch = make(chan interface{}, len(s.peers)*2)
@@ -715,9 +751,9 @@ func (s *server) loadConf() error {
 }
 
 func (s *server) writeConf() error {
-	s.conf.PeerHosts = []string{}
-	for _, p := range s.peers {
-		s.conf.PeerHosts = append(s.conf.PeerHosts, p.Host)
+	s.conf.Peers = map[string]string{}
+	for svrname, peer := range s.peers {
+		s.conf.Peers[svrname] = peer.Host
 	}
 
 	f, err := os.OpenFile(s.confPath, os.O_WRONLY|os.O_TRUNC|os.O_CREATE, os.ModePerm)

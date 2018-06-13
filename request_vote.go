@@ -17,7 +17,7 @@ type RequestVoteImp struct {
 func (e *RequestVoteImp) RequestVoteMe(ctx context.Context, req *pb.VoteRequest) (*pb.VoteResponse, error) {
 	voteGranted := false
 
-	if e.server.IsServerMember(req.Host) {
+	if e.server.IsServerMember(req.GetCandidateName()) {
 		lastindex, _ := e.server.log.LastLogInfo()
 		if e.server.State() == Candidate && req.Term > e.server.VotedForTerm() && req.LastLogIndex >= lastindex {
 			voteGranted = true

@@ -24,37 +24,41 @@
 
 在主目录下，启动多个测试节点，比如(测试配置文件中定义了三个节点):
 ```bash
-$ go test -confpath /opt/raft/raft_test0.cfg
-config: &{LogPrefix:raft-log- CommitIndex:0 PeerHosts:[127.0.0.1:3001 127.0.0.1:3002 127.0.0.1:3000] Host:127.0.0.1:3000 Client:127.0.0.1:4000 Name:server0}
-state loaded: &{CommitIndex:2 Term:87 VoteFor:}
-current state:follower, term:87
-listen internal rpc address: 127.0.0.1:3000
-extra handlefunc: map[]
-listen client address: 127.0.0.1:4000
-current state:candidate, term:87
-current state:leader, term:95
-To rewrite configuration to persistent storage.
-Appendentries succeeded: 127.0.0.1:3003 Success:true Term:95 Index:4 
+$ go test -bexpect=2 -name=node1 -host=127.0.0.1:3333 -client=127.0.0.1:3334
+{SvrName:node1 SvrHost:127.0.0.1:3333 Client:127.0.0.1:3334 JoinTarget: BootstrapExpect:2}
+[INFO]&{LogPrefix:raft-log- CommitIndex:0 Peers:map[node1:127.0.0.1:3333] Host:127.0.0.1:3333 Client:127.0.0.1:3334 Name:node1 BootstrapExpect:2 JoinTarget:127.0.0.1:3333}
+[INFO]state loaded: &{CommitIndex:8 Term:20 VoteFor:}
+[INFO]current state:bootstrapping, term:20
+[INFO][INFO]extra handlefunc: map[]
+[INFO]listen client address: 127.0.0.1:3334
+listen internal rpc address: 127.0.0.1:3333
+[INFO]current state:candidate, term:20
+[INFO]current state:leader, term:21
+[INFO]append entries suc: 127.0.0.1:3337 Term:21 Index:8
 ```
 ```bash
-$ go test -confpath /opt/raft/raft_test1.cfg
-config: &{LogPrefix:raft-log- CommitIndex:0 PeerHosts:[127.0.0.1:3002 127.0.0.1:3000 127.0.0.1:3001] Host:127.0.0.1:3001 Client:127.0.0.1:4001 Name:server1}
-state loaded: &{CommitIndex:2 Term:87 VoteFor:}
-current state:follower, term:87
-extra handlefunc: map[]
-listen client address: 127.0.0.1:4001
-listen internal rpc address: 127.0.0.1:3001
-current state:candidate, term:87
-current state:follower, term:95
+$ go test -bexpect=2 -name=node2 -host=127.0.0.1:3335 -client=127.0.0.1:3336 -join=127.0.0.1:3333
+{SvrName:node2 SvrHost:127.0.0.1:3335 Client:127.0.0.1:3336 JoinTarget:127.0.0.1:3333 BootstrapExpect:2}
+[INFO]&{LogPrefix:raft-log- CommitIndex:0 Peers:map[node2:127.0.0.1:3335] Host:127.0.0.1:3335 Client:127.0.0.1:3336 Name:node2 BootstrapExpect:2 JoinTarget:127.0.0.1:3333}
+[INFO]state loaded: &{CommitIndex:8 Term:20 VoteFor:}
+[INFO]current state:bootstrapping, term:20
+[INFO]extra handlefunc: map[]
+[INFO]listen client address: 127.0.0.1:3336
+[INFO]listen internal rpc address: 127.0.0.1:3335
+[INFO]current state:candidate, term:20
+[INFO]current state:follower, term:21
 ```
 ```bash
-$ go test -confpath /opt/raft/raft_test2.cfg
-config: &{LogPrefix:raft-log- CommitIndex:0 PeerHosts:[127.0.0.1:3002 127.0.0.1:3000 127.0.0.1:3001] Host:127.0.0.1:3002 Client:127.0.0.1:4002 Name:server2}
-state loaded: &{CommitIndex:2 Term:87 VoteFor:}
-current state:follower, term:87
-listen internal rpc address: 127.0.0.1:3002
-extra handlefunc: map[]
-listen client address: 127.0.0.1:4002
+$ go test -bexpect=2 -name=node3 -host=127.0.0.1:3337 -client=127.0.0.1:3338 -join=127.0.0.1:3333
+{SvrName:node3 SvrHost:127.0.0.1:3337 Client:127.0.0.1:3338 JoinTarget:127.0.0.1:3333 BootstrapExpect:2}
+[INFO]&{LogPrefix:raft-log- CommitIndex:0 Peers:map[node3:127.0.0.1:3337] Host:127.0.0.1:3337 Client:127.0.0.1:3338 Name:node3 BootstrapExpect:2 JoinTarget:127.0.0.1:3333}
+[INFO]state loaded: &{CommitIndex:8 Term:21 VoteFor:}
+[INFO]current state:bootstrapping, term:21
+[INFO]extra handlefunc: map[]
+[INFO]listen client address: 127.0.0.1:3338
+[INFO]listen internal rpc address: 127.0.0.1:3337
+[INFO]current state:candidate, term:21
+[INFO]current state:follower, term:21
 ```
 #### 测试成员变更
 

@@ -7,12 +7,15 @@ Package proto is a generated protocol buffer package.
 It is generated from these files:
 	appendentry_request.proto
 	log_entry.proto
+	svrbootstrap.proto
 	vote_request.proto
 
 It has these top-level messages:
 	AppendEntriesReuqest
 	AppendEntriesResponse
 	LogEntry
+	PreJoinRequest
+	PreJoinResponse
 	VoteRequest
 	VoteResponse
 */

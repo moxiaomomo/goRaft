@@ -5,4 +5,4 @@ go:
   - "1.9"
   - master
 
-script: go test -v -confpath='/opt/raft/raft_test0.cfg' -exittime=5
+script: go test -bexpect=2 -name=node1 -host=127.0.0.1:3333 -client=127.0.0.1:3334 -exittime=5

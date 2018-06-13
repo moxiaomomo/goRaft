@@ -28,7 +28,7 @@ type VoteRequest struct {
 func (m *VoteRequest) Reset()                    { *m = VoteRequest{} }
 func (m *VoteRequest) String() string            { return proto1.CompactTextString(m) }
 func (*VoteRequest) ProtoMessage()               {}
-func (*VoteRequest) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{0} }
+func (*VoteRequest) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{0} }
 
 func (m *VoteRequest) GetTerm() uint64 {
 	if m != nil {
@@ -73,7 +73,7 @@ type VoteResponse struct {
 func (m *VoteResponse) Reset()                    { *m = VoteResponse{} }
 func (m *VoteResponse) String() string            { return proto1.CompactTextString(m) }
 func (*VoteResponse) ProtoMessage()               {}
-func (*VoteResponse) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{1} }
+func (*VoteResponse) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{1} }
 
 func (m *VoteResponse) GetTerm() uint64 {
 	if m != nil {
@@ -166,9 +166,9 @@ var _RequestVote_serviceDesc = grpc.ServiceDesc{
 	Metadata: "vote_request.proto",
 }
 
-func init() { proto1.RegisterFile("vote_request.proto", fileDescriptor2) }
+func init() { proto1.RegisterFile("vote_request.proto", fileDescriptor3) }
 
-var fileDescriptor2 = []byte{
+var fileDescriptor3 = []byte{
 	// 217 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0x12, 0x2a, 0xcb, 0x2f, 0x49,
 	0x8d, 0x2f, 0x4a, 0x2d, 0x2c, 0x4d, 0x2d, 0x2e, 0xd1, 0x2b, 0x28, 0xca, 0x2f, 0xc9, 0x17, 0x62,

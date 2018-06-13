@@ -15,7 +15,6 @@ type Peer struct {
 	server           *server
 	Name             string
 	Host             string
-	Client           string
 	voteRequestState int
 
 	lastActivity      time.Time
@@ -29,6 +28,7 @@ type RequestVoteRespChan struct {
 	Failed   bool
 	Resp     *pb.VoteResponse
 	PeerHost string
+	PeerName string
 }
 
 // AppendLogRespChan response of an append-entry request
@@ -36,6 +36,7 @@ type AppendLogRespChan struct {
 	Failed   bool
 	Resp     *pb.AppendEntriesResponse
 	PeerHost string
+	PeerName string
 }
 
 // NewPeer creates a new peer instance
@@ -78,18 +79,19 @@ func (p *Peer) RequestVoteMe(lastLogIndex, lastTerm uint64) {
 	defer conn.Close()
 
 	client := pb.NewRequestVoteClient(conn)
-	pb := &pb.VoteRequest{
+	votereq := &pb.VoteRequest{
 		Term:          p.server.currentTerm,
 		LastLogIndex:  lastLogIndex,
 		LastLogTerm:   lastTerm,
 		CandidateName: p.server.conf.Name,
 		Host:          p.server.conf.Host,
 	}
-	res, err := client.RequestVoteMe(context.Background(), pb)
+	res, err := client.RequestVoteMe(context.Background(), votereq)
 
 	resp := &RequestVoteRespChan{
 		Resp:     res,
 		PeerHost: p.Host,
+		PeerName: p.Name,
 	}
 
 	if err != nil {
@@ -126,7 +128,7 @@ func (p *Peer) RequestAppendEntries(entries []*pb.LogEntry, sindex, lindex, lter
 		PreLogIndex:       lindex,
 		PreLogTerm:        lterm,
 		CommitIndex:       p.server.log.CommitIndex(),
-		LeaderName:        p.server.conf.Host,
+		LeaderName:        p.server.conf.Name,
 		LeaderHost:        p.server.conf.Host,
 		LeaderExHost:      p.server.conf.Client,
 		HeartbeatInterval: p.server.heartbeatInterval,
@@ -177,6 +179,7 @@ func (p *Peer) RequestAppendEntries(entries []*pb.LogEntry, sindex, lindex, lter
 			Failed:   false,
 			Resp:     res,
 			PeerHost: p.Host,
+			PeerName: p.Name,
 		}
 
 		if err != nil {
