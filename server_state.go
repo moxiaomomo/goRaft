@@ -18,8 +18,8 @@ type ServerState struct {
 	VoteFor     string `json:"voteFor"`
 }
 
-// FlushState save data into file
-func (s *server) FlushState() error {
+// FlushStatus save status into file
+func (s *server) FlushStatus() error {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 
@@ -48,8 +48,8 @@ func (s *server) FlushState() error {
 	return nil
 }
 
-// LoadState load data from file
-func (s *server) LoadState() error {
+// LoadStatus load status from file
+func (s *server) LoadStatus() error {
 	logpath := path.Join(s.path, "internlog")
 	fname := fmt.Sprintf("%s/state-%s", logpath, s.conf.Name)
 

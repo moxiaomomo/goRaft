@@ -284,7 +284,7 @@ func (s *server) Init() error {
 		return fmt.Errorf("raft-log initiation error: %s", err)
 	}
 
-	err = s.LoadState()
+	err = s.LoadStatus()
 	if err != nil {
 		return fmt.Errorf("raft load srvstate error: %s", err)
 	}
@@ -350,7 +350,7 @@ func (s *server) TickTask() {
 	for {
 		select {
 		case <-t.C:
-			s.FlushState()
+			s.FlushStatus()
 			nowt := util.GetTimestampInMilli()
 			// snapshotting every 5 second
 			if nowt-s.lastSnapshotTime > 5000 {
@@ -399,8 +399,8 @@ func (s *server) AddPeer(name string, host string) error {
 	}
 
 	// to flush configuration
-	logger.Info("To rewrite configuration to persistent storage.")
-	_ = s.writeConf()
+	// logger.Info("To rewrite configuration to persistent storage.")
+	// _ = s.writeConf()
 
 	s.mutex.Unlock()
 
