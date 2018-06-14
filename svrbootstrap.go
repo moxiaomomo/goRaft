@@ -1,6 +1,7 @@
 package raft
 
 import (
+	"os"
 	"time"
 
 	pb "github.com/moxiaomomo/goRaft/proto"
@@ -34,7 +35,10 @@ func (s *server) PreJoinRequest() {
 	}
 	logger.Infof("prejoin result:%+v\n", res)
 
-	if res.Result != -1 && res.Jointarget == s.conf.JoinTarget {
+	if res.Result == -2 {
+		logger.Errorf("join failed: %s\n", res.Message)
+		os.Exit(1)
+	} else if res.Result >= 0 && res.Jointarget == s.conf.JoinTarget {
 		for name, host := range res.Curnodes {
 			if _, ok := s.peers[name]; !ok {
 				ti := time.Duration(s.heartbeatInterval) * time.Millisecond
@@ -61,7 +65,11 @@ func (s *server) PreJoin(ctx context.Context, req *pb.PreJoinRequest) (*pb.PreJo
 		resp.Jointarget = s.currentLeaderHost
 	}
 
-	if (s.currentLeaderName != "" && s.State() != Leader) ||
+	if req.Name == s.conf.Name {
+		resp.Result = -2
+		resp.Message = "Duplicated server name cannot be join"
+		return resp, nil
+	} else if (s.currentLeaderName != "" && s.State() != Leader) ||
 		(s.currentLeaderName == "" && s.conf.JoinTarget != s.conf.Host) {
 		resp.Result = -1
 		resp.Message = "You should join the boostrap server or leader"
