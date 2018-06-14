@@ -38,4 +38,8 @@ const (
 	EnvJoinTarget = "JOIN_TARGET"
 	// EnvBootstrapExpect node number exptected
 	EnvBootstrapExpect = "BOOTSTRAP_EXPECT"
+
+	// MinBootstrapExpect minimum node number of bootstrap expected
+	// the node number of a cluster should be at least two
+	MinBootstrapExpect = 2
 )

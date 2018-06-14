@@ -39,6 +39,7 @@ func (s *server) PreJoinRequest() {
 			}
 		}
 		s.conf.Peers = res.Curnodes
+		s.conf.BootstrapExpect = int(res.Bootexpect)
 	}
 	//fmt.Printf("%+v\n", res.Curnodes)
 }
@@ -67,6 +68,7 @@ func (s *server) PreJoin(ctx context.Context, req *pb.PreJoinRequest) (*pb.PreJo
 		resp.Result = 0
 	}
 	resp.Curnodes = s.conf.Peers
+	resp.Bootexpect = int64(s.QuorumSize())
 	//fmt.Printf("%+v\n", resp.Curnodes)
 	return resp, nil
 }

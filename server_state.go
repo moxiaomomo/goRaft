@@ -65,7 +65,6 @@ func (s *server) LoadStatus() error {
 		return nil
 	}
 
-	//s.srvstate = ServerState{}
 	srvstate := &ServerState{}
 	if err = json.Unmarshal(b, srvstate); err != nil {
 		return err

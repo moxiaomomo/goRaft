@@ -141,8 +141,8 @@ func (s *server) SyncPeerStatusOrReset() int {
 	defer s.mutex.Unlock()
 
 	sucCnt, failCnt := 0, 0
-	for _, v := range s.syncpeer {
-		if v == 1 {
+	for svrname, v := range s.syncpeer {
+		if v == 1 || svrname == s.conf.Name {
 			sucCnt++
 		} else if v == 0 {
 			failCnt++
@@ -228,7 +228,7 @@ func (s *server) VoteForSelf() {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 
-	s.syncpeer[s.conf.Host] = 1
+	s.syncpeer[s.conf.Name] = 1
 	s.peers[s.conf.Name].SetVoteRequestState(VoteGranted)
 }
 
@@ -314,11 +314,8 @@ func (s *server) Start() error {
 
 	s.stopped = make(chan bool)
 
-	if len(s.peers) >= s.conf.BootstrapExpect {
-		s.SetState(Follower)
-	} else {
-		s.SetState(Bootstrapping)
-	}
+	// start as Bootstrapping status
+	s.SetState(Bootstrapping)
 
 	go s.StartInternServe()
 	go s.StartExternServe()
@@ -484,7 +481,7 @@ func (s *server) bootstrappingLoop() {
 			if s.conf.JoinTarget != s.conf.Host {
 				s.PreJoinRequest()
 			}
-			if len(s.peers) >= s.conf.BootstrapExpect {
+			if len(s.peers) >= s.QuorumSize() {
 				s.SetState(Candidate)
 				return
 			}
@@ -496,24 +493,25 @@ func (s *server) bootstrappingLoop() {
 func (s *server) candidateLoop() {
 	t := time.NewTimer(time.Duration(150+rand.Intn(150)) * time.Millisecond)
 	for s.State() == Candidate {
+		respStatus := s.SyncPeerStatusOrReset()
+		if respStatus == 1 {
+			s.SetState(Leader)
+			t.Stop()
+			return
+		}
+
 		select {
 		case c := <-s.ch:
 			switch d := c.(type) {
 			case *RequestVoteRespChan:
 				if d.Failed == false {
 					if d.Resp.VoteGranted {
-						s.syncpeer[d.PeerHost] = 1
+						s.syncpeer[d.PeerName] = 1
 						s.peers[d.PeerName].SetVoteRequestState(VoteGranted)
 					} else {
-						s.syncpeer[d.PeerHost] = 0
+						s.syncpeer[d.PeerName] = 0
 						s.peers[d.PeerName].SetVoteRequestState(VoteRejected)
 					}
-				}
-				respStatus := s.SyncPeerStatusOrReset()
-				if respStatus == 1 {
-					s.SetState(Leader)
-					t.Stop()
-					return
 				}
 			}
 		case <-t.C:
@@ -562,7 +560,7 @@ func (s *server) followerLoop() {
 
 func (s *server) leaderLoop() {
 	// to request append entry as a new leader is elected
-	s.syncpeer[s.conf.Host] = 1
+	s.syncpeer[s.conf.Name] = 1
 	findex := s.log.FirstLogIndex()
 	lindex, lterm := s.log.LastLogInfo()
 	entry := &pb.LogEntry{
@@ -589,15 +587,16 @@ func (s *server) leaderLoop() {
 			switch d := c.(type) {
 			case *AppendLogRespChan:
 				if d.Failed == false {
-					if d.Resp != nil && d.Resp.Success && d.Resp.Term == s.currentTerm {
-						s.syncpeer[d.PeerHost] = 1
-					} else {
-						s.syncpeer[d.PeerHost] = 0
+					// set syncstatus=1 if there is a response for current term
+					if d.Resp != nil && d.Resp.Term == s.currentTerm {
+						s.syncpeer[d.PeerName] = 1
 					}
+
 					respStatus := s.SyncPeerStatusOrReset()
 					if respStatus != -1 {
 						s.lastHeartbeatTime = util.GetTimestampInMilli()
 					}
+
 					if respStatus == 1 {
 						lcmiIndex, _ := s.log.LastCommitInfo()
 						lindex, _ := s.log.LastLogInfo()
@@ -624,7 +623,7 @@ func (s *server) leaderLoop() {
 		case <-t.C:
 			findex := s.log.FirstLogIndex()
 			lindex, lterm := s.log.LastLogInfo()
-			s.syncpeer[s.conf.Host] = 1
+			s.syncpeer[s.conf.Name] = 1
 			for svrname := range s.peers {
 				if s.conf.Name == svrname {
 					continue
@@ -696,8 +695,25 @@ func (s *server) resetSyncPeer() {
 	}
 }
 
+// the most nodes count
 func (s *server) quorumSize() int {
-	return len(s.peers)/2 + 1
+	val := s.conf.BootstrapExpect
+	if val < len(s.peers)/2+1 {
+		val = len(s.peers)/2 + 1
+	}
+	if val < MinBootstrapExpect {
+		val = MinBootstrapExpect
+	}
+	return val
+	// return len(s.peers)/2 + 1
+}
+
+// QuorumSize the most nodes count
+func (s *server) QuorumSize() int {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+
+	return s.quorumSize()
 }
 
 func (s *server) loadConf(p Params) error {
@@ -724,8 +740,8 @@ func (s *server) loadConf(p Params) error {
 		// join self
 		s.conf.JoinTarget = s.conf.Host
 	}
-	if s.conf.BootstrapExpect <= 0 {
-		s.conf.BootstrapExpect = 1
+	if s.conf.BootstrapExpect <= 1 {
+		s.conf.BootstrapExpect = MinBootstrapExpect
 	}
 
 	s.peers = make(map[string]*Peer)

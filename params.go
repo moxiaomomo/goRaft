@@ -14,6 +14,7 @@ var (
 	bexpect = flag.Int("bexpect", 1, "the node number epxtected to start leader election")
 )
 
+// Params Params
 type Params struct {
 	SvrName         string
 	SvrHost         string
@@ -22,6 +23,7 @@ type Params struct {
 	BootstrapExpect int
 }
 
+// ParseEnvParams to read params from env-variables or cli-variables
 func ParseEnvParams() Params {
 	flag.Parse()
 
