@@ -5,7 +5,7 @@
 
 #### raft协议的go版本，实现功能包括：
 
--  选主投票
+- 选主投票
 - 节点心跳
 - 日志同步
 - 成员变更
@@ -15,14 +15,13 @@
 
 - 完善snapshot快照同步逻辑
 - 成员变更，每次只允许变动一个节点
-- 成员变更日志，leader节点在追加持久化后即可apply
 - 非leader节点转发请求，考虑改用rpc方式
-- 改善和统一运行日志
 - 改善状态机。。。。。。
 
 #### 测试启动：
 
 在主目录下，启动多个测试节点，比如(测试配置文件中定义了三个节点):
+
 ```bash
 $ go test -bexpect=2 -name=node1 -host=127.0.0.1:3333 -client=127.0.0.1:3334
 {SvrName:node1 SvrHost:127.0.0.1:3333 Client:127.0.0.1:3334 JoinTarget: BootstrapExpect:2}
@@ -36,8 +35,9 @@ listen internal rpc address: 127.0.0.1:3333
 [INFO]current state:leader, term:21
 [INFO]append entries suc: 127.0.0.1:3337 Term:21 Index:8
 ```
+
 ```bash
-$ go test -bexpect=2 -name=node2 -host=127.0.0.1:3335 -client=127.0.0.1:3336 -join=127.0.0.1:3333
+$ go test -name=node2 -host=127.0.0.1:3335 -client=127.0.0.1:3336 -join=127.0.0.1:3333
 {SvrName:node2 SvrHost:127.0.0.1:3335 Client:127.0.0.1:3336 JoinTarget:127.0.0.1:3333 BootstrapExpect:2}
 [INFO]&{LogPrefix:raft-log- CommitIndex:0 Peers:map[node2:127.0.0.1:3335] Host:127.0.0.1:3335 Client:127.0.0.1:3336 Name:node2 BootstrapExpect:2 JoinTarget:127.0.0.1:3333}
 [INFO]state loaded: &{CommitIndex:8 Term:20 VoteFor:}
@@ -48,8 +48,9 @@ $ go test -bexpect=2 -name=node2 -host=127.0.0.1:3335 -client=127.0.0.1:3336 -jo
 [INFO]current state:candidate, term:20
 [INFO]current state:follower, term:21
 ```
+
 ```bash
-$ go test -bexpect=2 -name=node3 -host=127.0.0.1:3337 -client=127.0.0.1:3338 -join=127.0.0.1:3333
+$ go test -name=node3 -host=127.0.0.1:3337 -client=127.0.0.1:3338 -join=127.0.0.1:3333
 {SvrName:node3 SvrHost:127.0.0.1:3337 Client:127.0.0.1:3338 JoinTarget:127.0.0.1:3333 BootstrapExpect:2}
 [INFO]&{LogPrefix:raft-log- CommitIndex:0 Peers:map[node3:127.0.0.1:3337] Host:127.0.0.1:3337 Client:127.0.0.1:3338 Name:node3 BootstrapExpect:2 JoinTarget:127.0.0.1:3333}
 [INFO]state loaded: &{CommitIndex:8 Term:21 VoteFor:}
@@ -60,6 +61,7 @@ $ go test -bexpect=2 -name=node3 -host=127.0.0.1:3337 -client=127.0.0.1:3338 -jo
 [INFO]current state:candidate, term:21
 [INFO]current state:follower, term:21
 ```
+
 #### 测试成员变更
 
 启动要加入集群的新节点后，随机向已组成集群的节点发送请求，比如：
@@ -70,6 +72,7 @@ curl "http://localhost:4001/internal/join?name=server3&host=127.0.0.1:3003"
 剔除节点：
 curl "http://localhost:4002/internal/leave?name=server3&host=127.0.0.1:3003"
 ```
+
 #### 日志同步状态检查
 
 在raft集群运行过程中，想简单检查日志log/节点状态是否一致，可直接尝试：

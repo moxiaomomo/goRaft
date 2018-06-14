@@ -35,6 +35,7 @@ func (e *AppendEntriesImp) AppendEntries(ctx context.Context, req *pb.AppendEntr
 		Term:    req.GetTerm(),
 	}
 
+	// fmt.Printf("%s %t\n", req.LeaderName, e.server.IsServerMember(req.LeaderName))
 	// peer host should be in the configuration
 	if e.server.IsServerMember(req.LeaderName) {
 		// update current server state

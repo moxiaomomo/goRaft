@@ -16,5 +16,6 @@ message PreJoinResponse {
     int64 result = 1;
     int64 bootexpect = 2;
     string message = 3;
-    map<string, string> curnodes = 4;
+    string leadername = 4;
+    map<string, string> curnodes = 5;
 }

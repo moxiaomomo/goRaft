@@ -150,6 +150,7 @@ func (s *server) SyncPeerStatusOrReset() int {
 	}
 
 	qsize := s.quorumSize()
+
 	if sucCnt >= qsize {
 		s.resetSyncPeer()
 		return 1
@@ -157,6 +158,7 @@ func (s *server) SyncPeerStatusOrReset() int {
 		s.resetSyncPeer()
 		return 0
 	}
+	// fmt.Printf("%+v\n", s.syncpeer)
 	return -1
 }
 
@@ -393,6 +395,7 @@ func (s *server) AddPeer(name string, host string) error {
 		ti := time.Duration(s.heartbeatInterval) * time.Millisecond
 		peer := NewPeer(s, name, host, ti)
 		s.peers[name] = peer
+		s.conf.Peers[name] = host
 	}
 
 	// to flush configuration
@@ -481,11 +484,13 @@ func (s *server) bootstrappingLoop() {
 			if s.conf.JoinTarget != s.conf.Host {
 				s.PreJoinRequest()
 			}
-			if len(s.peers) >= s.QuorumSize() {
+			if s.currentLeaderName != "" {
+				s.SetState(Follower)
+			} else if len(s.peers) >= s.QuorumSize() {
 				s.SetState(Candidate)
-				return
+			} else {
+				t.Reset(time.Duration(100) * time.Millisecond)
 			}
-			t.Reset(time.Duration(100) * time.Millisecond)
 		}
 	}
 }
@@ -571,6 +576,10 @@ func (s *server) leaderLoop() {
 	}
 	s.log.AppendEntry(&LogEntry{Entry: entry})
 
+	s.currentLeaderExHost = s.conf.Client
+	s.currentLeaderHost = s.conf.Host
+	s.currentLeaderName = s.conf.Name
+
 	for svrname := range s.peers {
 		if s.conf.Name == svrname {
 			continue
@@ -582,20 +591,23 @@ func (s *server) leaderLoop() {
 	s.lastHeartbeatTime = util.GetTimestampInMilli()
 	t := time.NewTimer(time.Duration(s.heartbeatInterval) * time.Millisecond)
 	for s.State() == Leader {
+		respStatus := s.SyncPeerStatusOrReset()
+		if respStatus != -1 {
+			s.lastHeartbeatTime = util.GetTimestampInMilli()
+		}
+		if s.IsHeartbeatTimeout() {
+			s.SetState(Candidate)
+			t.Stop()
+			return
+		}
+
 		select {
 		case c := <-s.ch:
 			switch d := c.(type) {
 			case *AppendLogRespChan:
 				if d.Failed == false {
-					// set syncstatus=1 if there is a response for current term
-					if d.Resp != nil && d.Resp.Term == s.currentTerm {
-						s.syncpeer[d.PeerName] = 1
-					}
-
-					respStatus := s.SyncPeerStatusOrReset()
-					if respStatus != -1 {
-						s.lastHeartbeatTime = util.GetTimestampInMilli()
-					}
+					// set syncstatus=1 if there is a response
+					s.syncpeer[d.PeerName] = 1
 
 					if respStatus == 1 {
 						lcmiIndex, _ := s.log.LastCommitInfo()
@@ -613,11 +625,6 @@ func (s *server) leaderLoop() {
 							s.log.UpdateCommitIndex(lindex)
 						}
 					}
-				}
-				if s.IsHeartbeatTimeout() {
-					s.SetState(Candidate)
-					t.Stop()
-					return
 				}
 			}
 		case <-t.C:

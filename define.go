@@ -9,4 +9,4 @@ var RunningStates = map[string]bool{
 }
 
 // DefaultConfig default configuration
-var DefaultConfig = `{"logprefix":"raft-log-","commitIndex":0,"name":"server0"}`
+var DefaultConfig = `{"logprefix":"raft-log-","bExpect":2,"name":"server0"}`

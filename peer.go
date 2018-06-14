@@ -141,6 +141,7 @@ func (p *Peer) RequestAppendEntries(entries []*pb.LogEntry, sindex, lindex, lter
 		Failed:   false,
 		Resp:     res,
 		PeerHost: p.Host,
+		PeerName: p.Name,
 	}
 
 	if err != nil {
@@ -166,7 +167,7 @@ func (p *Peer) RequestAppendEntries(entries []*pb.LogEntry, sindex, lindex, lter
 			PreLogIndex:       res.Index,
 			PreLogTerm:        res.Term,
 			CommitIndex:       p.server.log.CommitIndex(),
-			LeaderName:        p.server.conf.Host,
+			LeaderName:        p.server.conf.Name,
 			LeaderHost:        p.server.conf.Host,
 			LeaderExHost:      p.server.conf.Client,
 			HeartbeatInterval: p.server.heartbeatInterval,
@@ -174,13 +175,7 @@ func (p *Peer) RequestAppendEntries(entries []*pb.LogEntry, sindex, lindex, lter
 		}
 
 		res, err = client.AppendEntries(context.Background(), req)
-
-		resp := &AppendLogRespChan{
-			Failed:   false,
-			Resp:     res,
-			PeerHost: p.Host,
-			PeerName: p.Name,
-		}
+		resp.Resp = res
 
 		if err != nil {
 			//			fmt.Printf("leader reqeust AppendEntries failed, err:%s\n", err)
