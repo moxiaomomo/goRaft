@@ -83,15 +83,15 @@ curl "http://localhost:3334/intern/leave?name=server3&host=127.0.0.1:3003"
 在raft集群运行过程中，想简单检查日志log/节点状态是否一致，可直接尝试：
 
 ```bash
-$ sha1sum internlog/raft-log-server*
-ae58578bc6513c96eb79714c45cddadbbc2d7eb9  internlog/raft-log-server0
-ae58578bc6513c96eb79714c45cddadbbc2d7eb9  internlog/raft-log-server1
-ae58578bc6513c96eb79714c45cddadbbc2d7eb9  internlog/raft-log-server2
-ae58578bc6513c96eb79714c45cddadbbc2d7eb9  internlog/raft-log-server3
+$ sha1sum internlog/raft-log-node*
+ae58578bc6513c96eb79714c45cddadbbc2d7eb9  internlog/raft-log-node0
+ae58578bc6513c96eb79714c45cddadbbc2d7eb9  internlog/raft-log-node1
+ae58578bc6513c96eb79714c45cddadbbc2d7eb9  internlog/raft-log-node2
+ae58578bc6513c96eb79714c45cddadbbc2d7eb9  internlog/raft-log-node3
 
-$ sha1sum internlog/state-server*
-c77e5ac4aefd215f212e083e32ada9087bd3a7d5  internlog/state-server0
-c77e5ac4aefd215f212e083e32ada9087bd3a7d5  internlog/state-server1
-c77e5ac4aefd215f212e083e32ada9087bd3a7d5  internlog/state-server2
-c77e5ac4aefd215f212e083e32ada9087bd3a7d5  internlog/state-server3
+$ sha1sum internlog/state-node*
+c77e5ac4aefd215f212e083e32ada9087bd3a7d5  internlog/state-node0
+c77e5ac4aefd215f212e083e32ada9087bd3a7d5  internlog/state-node1
+c77e5ac4aefd215f212e083e32ada9087bd3a7d5  internlog/state-node2
+c77e5ac4aefd215f212e083e32ada9087bd3a7d5  internlog/state-node3
 ```
