@@ -70,7 +70,7 @@ func (s *server) LoadState() error {
 	if err = json.Unmarshal(b, srvstate); err != nil {
 		return err
 	}
-	logger.LogInfof("state loaded: %+v\n", srvstate)
+	logger.Infof("state loaded: %+v\n", srvstate)
 	s.log.UpdateCommitIndex(srvstate.CommitIndex)
 	s.SetTerm(srvstate.Term)
 	return nil

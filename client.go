@@ -73,12 +73,12 @@ func (s *server) StartExternServe() {
 	for url := range s.handlefunc {
 		http.HandleFunc(url, s.handlefunc[url])
 	}
-	logger.LogInfof("extra handlefunc: %+v\n", s.handlefunc)
+	logger.Infof("extra handlefunc: %+v\n", s.handlefunc)
 
 	http.HandleFunc("/intern/join", func(w http.ResponseWriter, r *http.Request) { JoinHandler(w, r, s) })
 	http.HandleFunc("/intern/leave", func(w http.ResponseWriter, r *http.Request) { LeaveHandler(w, r, s) })
 	http.HandleFunc("/intern/getleader", func(w http.ResponseWriter, r *http.Request) { GetLeaderHandler(w, r, s) })
 
-	logger.LogInfof("listen client address: %s\n", s.conf.Client)
+	logger.Infof("listen client address: %s\n", s.conf.Client)
 	http.ListenAndServe(s.conf.Client, nil)
 }

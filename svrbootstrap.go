@@ -11,7 +11,7 @@ import (
 func (s *server) PreJoinRequest() {
 	conn, err := grpc.Dial(s.conf.JoinTarget, grpc.WithInsecure())
 	if err != nil {
-		logger.LogErrorf("dail rpc failed, err: %s\n", err)
+		logger.Errorf("dail rpc failed, err: %s\n", err)
 		if conn != nil {
 			conn.Close()
 		}
@@ -27,7 +27,7 @@ func (s *server) PreJoinRequest() {
 	}
 	res, err := client.PreJoin(context.Background(), req)
 	if err != nil {
-		logger.LogErrorf("call rpc failed, err: %s\n", err)
+		logger.Errorf("call rpc failed, err: %s\n", err)
 	} else {
 		for n, v := range res.Curnodes {
 			if _, ok := s.peers[n]; !ok {

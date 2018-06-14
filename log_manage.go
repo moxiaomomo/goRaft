@@ -204,13 +204,13 @@ func (l *Log) UpdateCommitIndex(index uint64) {
 		return
 	}
 	if len(l.entries) == 0 {
-		logger.LogWarn("local log is empty, not to update commitindex.")
+		logger.Warn("local log is empty, not to update commitindex.")
 		return
 	}
 
 	lastindex := l.entries[len(l.entries)-1].Entry.GetIndex()
 	if index > lastindex {
-		logger.LogWarnf("local log is too old or index to commit is invalid,%d:%d\n",
+		logger.Warnf("local log is too old or index to commit is invalid,%d:%d\n",
 			index, lastindex)
 		return
 	}

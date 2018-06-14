@@ -82,7 +82,7 @@ func NewServer(workdir string, confPath string) (Server, error) {
 	_ = os.Mkdir(workdir, 0700)
 
 	params := ParseEnvParams()
-	fmt.Printf("%+v\n", params)
+	logger.Info(params)
 	if confPath == "" || !strings.Contains(confPath, "/") {
 		confPath = fmt.Sprintf("/opt/raft/raft_%s.cfg", params.SvrName)
 	}
@@ -279,7 +279,7 @@ func (s *server) Init() error {
 	if err != nil && !os.IsExist(err) {
 		return fmt.Errorf("raft-log initiation error: %s", err)
 	}
-	logger.LogInfof("%+v\n", s.conf)
+	logger.Infof("%+v\n", s.conf)
 	if err = s.log.LogInit(fmt.Sprintf("%s/%s%s", logpath, s.conf.LogPrefix, s.conf.Name)); err != nil {
 		return fmt.Errorf("raft-log initiation error: %s", err)
 	}
@@ -334,7 +334,7 @@ func (s *server) StartInternServe() {
 	pb.RegisterAppendEntriesServer(rpcserver, &AppendEntriesImp{server: s})
 	pb.RegisterDiscoveryAsBootServer(rpcserver, s)
 
-	logger.LogInfof("listen internal rpc address: %s\n", s.conf.Host)
+	logger.Infof("listen internal rpc address: %s\n", s.conf.Host)
 	address, err := net.Listen("tcp", s.conf.Host)
 	if err != nil {
 		panic(err)
@@ -399,7 +399,7 @@ func (s *server) AddPeer(name string, host string) error {
 	}
 
 	// to flush configuration
-	logger.LogInfo("To rewrite configuration to persistent storage.")
+	logger.Info("To rewrite configuration to persistent storage.")
 	_ = s.writeConf()
 
 	s.mutex.Unlock()
@@ -432,7 +432,7 @@ func (s *server) RemovePeer(name string, host string) error {
 	delete(s.peers, name)
 
 	// to flush configuration
-	logger.LogInfo("To rewrite configuration to persistent storage.")
+	logger.Info("To rewrite configuration to persistent storage.")
 	_ = s.writeConf()
 	s.mutex.Unlock()
 
@@ -457,7 +457,7 @@ func (s *server) RemovePeer(name string, host string) error {
 
 func (s *server) loop() {
 	for s.State() != Stopped {
-		logger.LogInfof("current state:%s, term:%d\n", s.State(), s.currentTerm)
+		logger.Infof("current state:%s, term:%d\n", s.State(), s.currentTerm)
 		switch s.State() {
 		case Bootstrapping:
 			s.bootstrappingLoop()

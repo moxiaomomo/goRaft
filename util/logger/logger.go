@@ -2,69 +2,76 @@ package logger
 
 import (
 	"fmt"
+
 	"github.com/moxiaomomo/goRaft/util"
 )
 
 var logLevel util.LogLevelEnum = util.LOG_INFO
 
+// SetLogLevel SetLogLevel
 func SetLogLevel(level util.LogLevelEnum) {
 	logLevel = level
 }
 
-func LogDebug(a ...interface{}) (n int, err error) {
+// Debug Debug level log
+func Debug(a ...interface{}) (n int, err error) {
 	if logLevel > util.LOG_DEBUG {
 		return 0, nil
 	}
-	fmt.Print("[DEBUG]")
-	return fmt.Println(a...)
+	str := []interface{}{"[DEBUG]"}
+	return fmt.Println(append(str, a)...)
 }
 
-func LogInfo(a ...interface{}) (n int, err error) {
+// Info Info level log
+func Info(a ...interface{}) (n int, err error) {
 	if logLevel > util.LOG_INFO {
 		return 0, nil
 	}
-	fmt.Print("[INFO]")
-	return fmt.Println(a...)
+	str := []interface{}{"[INFO]"}
+	return fmt.Println(append(str, a)...)
 }
 
-func LogWarn(a ...interface{}) (n int, err error) {
+// Warn Warn level log
+func Warn(a ...interface{}) (n int, err error) {
 	if logLevel > util.LOG_WARN {
 		return 0, nil
 	}
-	fmt.Print("[WARN]")
-	return fmt.Println(a...)
+	str := []interface{}{"[WARN]"}
+	return fmt.Println(append(str, a)...)
 }
 
-func LogError(a ...interface{}) (n int, err error) {
-	fmt.Print("[ERROR]")
-	return fmt.Println(a...)
+// Error Error level log
+func Error(a ...interface{}) (n int, err error) {
+	str := []interface{}{"[ERROR]"}
+	return fmt.Println(append(str, a)...)
 }
 
-func LogDebugf(format string, a ...interface{}) (n int, err error) {
+// Debugf Debugf level log
+func Debugf(format string, a ...interface{}) (n int, err error) {
 	if logLevel > util.LOG_DEBUG {
 		return 0, nil
 	}
-	fmt.Print("[DEBUG]")
-	return fmt.Printf(format, a...)
+
+	return fmt.Printf("[DEBUG] "+format, a...)
 }
 
-func LogInfof(format string, a ...interface{}) (n int, err error) {
+// Infof Infof level log
+func Infof(format string, a ...interface{}) (n int, err error) {
 	if logLevel > util.LOG_INFO {
 		return 0, nil
 	}
-	fmt.Print("[INFO]")
-	return fmt.Printf(format, a...)
+	return fmt.Printf("[INFO] "+format, a...)
 }
 
-func LogWarnf(format string, a ...interface{}) (n int, err error) {
+// Warnf Warnf level log
+func Warnf(format string, a ...interface{}) (n int, err error) {
 	if logLevel > util.LOG_WARN {
 		return 0, nil
 	}
-	fmt.Print("[WARN]")
-	return fmt.Printf(format, a...)
+	return fmt.Printf("[WARN] "+format, a...)
 }
 
-func LogErrorf(format string, a ...interface{}) (n int, err error) {
-	fmt.Print("[ERROR]")
-	return fmt.Printf(format, a...)
+// Errorf Errorf  level log
+func Errorf(format string, a ...interface{}) (n int, err error) {
+	return fmt.Printf("[ERROR] "+format, a...)
 }

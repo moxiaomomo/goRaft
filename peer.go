@@ -70,7 +70,7 @@ func (p *Peer) VoteRequestState() int {
 func (p *Peer) RequestVoteMe(lastLogIndex, lastTerm uint64) {
 	conn, err := grpc.Dial(p.Host, grpc.WithInsecure())
 	if err != nil {
-		logger.LogErrorf("dail rpc failed, err: %s\n", err)
+		logger.Errorf("dail rpc failed, err: %s\n", err)
 		if conn != nil {
 			conn.Close()
 		}
@@ -106,13 +106,13 @@ func (p *Peer) RequestVoteMe(lastLogIndex, lastTerm uint64) {
 // RequestAppendEntries send a request to append entries
 func (p *Peer) RequestAppendEntries(entries []*pb.LogEntry, sindex, lindex, lterm uint64) {
 	if p.server.State() != Leader {
-		logger.LogError("only leader can request append entries.")
+		logger.Error("only leader can request append entries.")
 		return
 	}
 
 	conn, err := grpc.Dial(p.Host, grpc.WithInsecure())
 	if err != nil {
-		logger.LogErrorf("dail rpc failed, err: %s\n", err)
+		logger.Errorf("dail rpc failed, err: %s\n", err)
 		if conn != nil {
 			conn.Close()
 		}
@@ -187,7 +187,7 @@ func (p *Peer) RequestAppendEntries(entries []*pb.LogEntry, sindex, lindex, lter
 			resp.Failed = true
 			p.server.ch <- resp
 		} else {
-			logger.LogInfof("append entries suc: %s %+v\n", p.Host, res)
+			logger.Infof("append entries suc: %s %+v\n", p.Host, res)
 			p.server.ch <- resp
 		}
 	}
