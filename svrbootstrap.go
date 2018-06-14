@@ -64,7 +64,7 @@ func (s *server) PreJoin(ctx context.Context, req *pb.PreJoinRequest) (*pb.PreJo
 	if (s.currentLeaderName != "" && s.State() != Leader) ||
 		(s.currentLeaderName == "" && s.conf.JoinTarget != s.conf.Host) {
 		resp.Result = -1
-		resp.Message = "you should to join the boostrap server or leader"
+		resp.Message = "You should join the boostrap server or leader"
 		return resp, nil
 	}
 

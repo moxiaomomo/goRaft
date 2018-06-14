@@ -431,10 +431,10 @@ func (s *server) RemovePeer(name string, host string) error {
 
 	delete(s.peers, name)
 
-	// to flush configuration
-	logger.Info("To rewrite configuration to persistent storage.")
-	_ = s.writeConf()
-	s.mutex.Unlock()
+	// // to flush configuration
+	// logger.Info("To rewrite configuration to persistent storage.")
+	// _ = s.writeConf()
+	// s.mutex.Unlock()
 
 	if s.State() == Leader {
 		lindex, _ := s.log.LastLogInfo()
