@@ -1,6 +1,7 @@
 package raft
 
 import (
+
 	//	"encoding/json"
 	//	"fmt"
 
@@ -39,13 +40,13 @@ func (e *AppendEntriesImp) AppendEntries(ctx context.Context, req *pb.AppendEntr
 	// peer host should be in the configuration
 	if e.server.IsServerMember(req.LeaderName) {
 		// update current server state
-		e.server.SetState(Follower)
 		e.server.currentTerm = req.GetTerm()
 		e.server.currentLeaderName = req.GetLeaderName()
 		e.server.currentLeaderHost = req.GetLeaderHost()
 		e.server.currentLeaderExHost = req.GetLeaderExHost()
 		e.server.lastHeartbeatTime = util.GetTimestampInMilli()
 		e.server.heartbeatInterval = req.GetHeartbeatInterval()
+		e.server.SetState(Follower)
 
 		// 1.if isfulllog, just overwrite log file
 		if isFullLog {
