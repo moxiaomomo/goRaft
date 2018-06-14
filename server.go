@@ -457,8 +457,9 @@ func (s *server) RemovePeer(name string, host string) error {
 
 func (s *server) loop() {
 	for s.State() != Stopped {
-		logger.Infof("current state:%s, term:%d\n", s.State(), s.currentTerm)
-		switch s.State() {
+		state := s.State()
+		logger.Infof("current state:%s, term:%d\n", state, s.currentTerm)
+		switch state {
 		case Bootstrapping:
 			s.bootstrappingLoop()
 		case Follower:
@@ -484,10 +485,8 @@ func (s *server) bootstrappingLoop() {
 			if s.conf.JoinTarget != s.conf.Host {
 				s.PreJoinRequest()
 			}
-			if s.currentLeaderName != "" {
+			if len(s.peers) >= s.QuorumSize() {
 				s.SetState(Follower)
-			} else if len(s.peers) >= s.QuorumSize() {
-				s.SetState(Candidate)
 			} else {
 				t.Reset(time.Duration(100) * time.Millisecond)
 			}

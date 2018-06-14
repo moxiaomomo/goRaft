@@ -30,7 +30,11 @@ func (s *server) PreJoinRequest() {
 	res, err := client.PreJoin(context.Background(), req)
 	if err != nil {
 		logger.Errorf("call rpc failed, err: %s\n", err)
-	} else {
+		return
+	}
+	logger.Infof("prejoin result:%+v\n", res)
+
+	if res.Result != -1 && res.Jointarget == s.conf.JoinTarget {
 		for name, host := range res.Curnodes {
 			if _, ok := s.peers[name]; !ok {
 				ti := time.Duration(s.heartbeatInterval) * time.Millisecond
@@ -39,34 +43,38 @@ func (s *server) PreJoinRequest() {
 		}
 		s.conf.Peers = res.Curnodes
 		s.conf.BootstrapExpect = int(res.Bootexpect)
-		s.currentLeaderName = res.Leadername
+	} else {
+		s.conf.JoinTarget = res.Jointarget
+		s.PreJoinRequest()
 	}
-	logger.Infof("prejoin result:%+v\n", res)
 }
 
 // PreJoinResponse PreJoinResponse
 func (s *server) PreJoin(ctx context.Context, req *pb.PreJoinRequest) (*pb.PreJoinResponse, error) {
-	if s.conf.JoinTarget != s.conf.Host && s.State() != Leader {
-		resp := &pb.PreJoinResponse{
-			Result:  -1,
-			Message: "im not the boostrap server or leader",
-		}
+	resp := &pb.PreJoinResponse{
+		Message:    "join succeeded",
+		Bootexpect: int64(s.QuorumSize()),
+		Jointarget: s.conf.JoinTarget,
+		Curnodes:   s.conf.Peers,
+	}
+	if s.currentLeaderHost != "" {
+		resp.Jointarget = s.currentLeaderHost
+	}
+
+	if (s.currentLeaderName != "" && s.State() != Leader) ||
+		(s.currentLeaderName == "" && s.conf.JoinTarget != s.conf.Host) {
+		resp.Result = -1
+		resp.Message = "you should to join the boostrap server or leader"
 		return resp, nil
 	}
-	resp := &pb.PreJoinResponse{
-		Message: "join succeeded",
-	}
+
 	if _, ok := s.peers[req.Name]; ok {
 		resp.Result = 1
 	} else {
 		defer func() { s.AddPeer(req.Name, req.Host) }()
 		resp.Result = 0
 	}
-	resp.Curnodes = s.conf.Peers
-	resp.Bootexpect = int64(s.QuorumSize())
-	resp.Leadername = s.currentLeaderName
 
 	// fmt.Printf("%+v\n", resp.Curnodes)
-	// fmt.Printf("%+v %+v\n", s.peers, s.conf.Peers)
 	return resp, nil
 }

@@ -24,53 +24,58 @@
 
 ```bash
 $ go test -bexpect=2 -name=node1 -host=127.0.0.1:3333 -client=127.0.0.1:3334
-{SvrName:node1 SvrHost:127.0.0.1:3333 Client:127.0.0.1:3334 JoinTarget: BootstrapExpect:2}
-[INFO]&{LogPrefix:raft-log- CommitIndex:0 Peers:map[node1:127.0.0.1:3333] Host:127.0.0.1:3333 Client:127.0.0.1:3334 Name:node1 BootstrapExpect:2 JoinTarget:127.0.0.1:3333}
-[INFO]state loaded: &{CommitIndex:8 Term:20 VoteFor:}
-[INFO]current state:bootstrapping, term:20
-[INFO][INFO]extra handlefunc: map[]
-[INFO]listen client address: 127.0.0.1:3334
-listen internal rpc address: 127.0.0.1:3333
-[INFO]current state:candidate, term:20
-[INFO]current state:leader, term:21
-[INFO]append entries suc: 127.0.0.1:3337 Term:21 Index:8
+[INFO] [{node1 127.0.0.1:3333 127.0.0.1:3334  1}]
+[INFO] &{LogPrefix:raft-log- Peers:map[node1:127.0.0.1:3333] Host:127.0.0.1:3333 Client:127.0.0.1:3334 Name:node1 BootstrapExpect:2 JoinTarget:127.0.0.1:3333}
+[INFO] state loaded: &{CommitIndex:0 Term:1 VoteFor:}
+[INFO] current state:bootstrapping, term:1
+[INFO] listen internal rpc address: 127.0.0.1:3333
+[INFO] extra handlefunc: map[]
+[INFO] listen client address: 127.0.0.1:3334
+[INFO] current state:follower, term:1
+[INFO] current state:candidate, term:1
+[INFO] current state:follower, term:1
 ```
 
 ```bash
 $ go test -name=node2 -host=127.0.0.1:3335 -client=127.0.0.1:3336 -join=127.0.0.1:3333
-{SvrName:node2 SvrHost:127.0.0.1:3335 Client:127.0.0.1:3336 JoinTarget:127.0.0.1:3333 BootstrapExpect:2}
-[INFO]&{LogPrefix:raft-log- CommitIndex:0 Peers:map[node2:127.0.0.1:3335] Host:127.0.0.1:3335 Client:127.0.0.1:3336 Name:node2 BootstrapExpect:2 JoinTarget:127.0.0.1:3333}
-[INFO]state loaded: &{CommitIndex:8 Term:20 VoteFor:}
-[INFO]current state:bootstrapping, term:20
-[INFO]extra handlefunc: map[]
-[INFO]listen client address: 127.0.0.1:3336
-[INFO]listen internal rpc address: 127.0.0.1:3335
-[INFO]current state:candidate, term:20
-[INFO]current state:follower, term:21
+[INFO] [{node2 127.0.0.1:3335 127.0.0.1:3336 127.0.0.1:3333 1}]
+[INFO] &{LogPrefix:raft-log- Peers:map[node2:127.0.0.1:3335] Host:127.0.0.1:3335 Client:127.0.0.1:3336 Name:node2 BootstrapExpect:2 JoinTarget:127.0.0.1:3333}
+[INFO] state loaded: &{CommitIndex:0 Term:0 VoteFor:}
+[INFO] current state:bootstrapping, term:0
+[INFO] listen internal rpc address: 127.0.0.1:3335
+[INFO] extra handlefunc: map[]
+[INFO] listen client address: 127.0.0.1:3336
+[INFO] prejoin result:bootexpect:2 message:"join succeeded" jointarget:"127.0.0.1:3333" curnodes:<key:"node1" value:"127.0.0.1:3333" > curnodes:<key:"node2" value:"127.0.0.1:3335" > 
+[INFO] current state:follower, term:0
+[INFO] current state:candidate, term:0
+[INFO] current state:leader, term:1
+[INFO] append entries suc: 127.0.0.1:3333 Term:1 
+[INFO] append entries suc: 127.0.0.1:3333 Success:true Term:1 Index:1 
 ```
 
 ```bash
 $ go test -name=node3 -host=127.0.0.1:3337 -client=127.0.0.1:3338 -join=127.0.0.1:3333
-{SvrName:node3 SvrHost:127.0.0.1:3337 Client:127.0.0.1:3338 JoinTarget:127.0.0.1:3333 BootstrapExpect:2}
-[INFO]&{LogPrefix:raft-log- CommitIndex:0 Peers:map[node3:127.0.0.1:3337] Host:127.0.0.1:3337 Client:127.0.0.1:3338 Name:node3 BootstrapExpect:2 JoinTarget:127.0.0.1:3333}
-[INFO]state loaded: &{CommitIndex:8 Term:21 VoteFor:}
-[INFO]current state:bootstrapping, term:21
-[INFO]extra handlefunc: map[]
-[INFO]listen client address: 127.0.0.1:3338
-[INFO]listen internal rpc address: 127.0.0.1:3337
-[INFO]current state:candidate, term:21
-[INFO]current state:follower, term:21
+[INFO] [{node3 127.0.0.1:3337 127.0.0.1:3338 127.0.0.1:3333 1}]
+[INFO] &{LogPrefix:raft-log- Peers:map[node3:127.0.0.1:3337] Host:127.0.0.1:3337 Client:127.0.0.1:3338 Name:node3 BootstrapExpect:2 JoinTarget:127.0.0.1:3333}
+[INFO] current state:bootstrapping, term:0
+[INFO] extra handlefunc: map[]
+[INFO] listen client address: 127.0.0.1:3338
+[INFO] listen internal rpc address: 127.0.0.1:3337
+[INFO] prejoin result:result:-1 bootexpect:2 message:"you should to join the boostrap server or leader" jointarget:"127.0.0.1:3335" curnodes:<key:"node1" value:"127.0.0.1:3333" > curnodes:<key:"node2" value:"127.0.0.1:3335" > 
+[INFO] prejoin result:bootexpect:2 message:"join succeeded" jointarget:"127.0.0.1:3335" curnodes:<key:"node1" value:"127.0.0.1:3333" > curnodes:<key:"node2" value:"127.0.0.1:3335" > curnodes:<key:"node3" value:"127.0.0.1:3337" > 
+[INFO] current state:follower, term:0
 ```
 
 #### 测试成员变更
 
-启动要加入集群的新节点后，随机向已组成集群的节点发送请求，比如：
+启动要加入集群的新节点后，可以通过外部随机向已组成集群的节点发送请求，比如：
 
 ```bash
-添加节点：
-curl "http://localhost:4001/internal/join?name=server3&host=127.0.0.1:3003"
+添加节点：(一般节点启动时会首先通过 -join=xxx 方式来加入集群)
+curl "http://localhost:3334/intern/join?name=server3&host=127.0.0.1:3003"
+
 剔除节点：
-curl "http://localhost:4002/internal/leave?name=server3&host=127.0.0.1:3003"
+curl "http://localhost:3334/intern/leave?name=server3&host=127.0.0.1:3003"
 ```
 
 #### 日志同步状态检查
